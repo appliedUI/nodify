@@ -1,24 +1,13 @@
 <template>
   <div class="force-graph-container">
-    <SimulationProgress
-      :show="graphForceStore.graphLoading"
-      :progress="graphForceStore.openaiProgress"
-    />
-    <SimulationProgress
-      :show="isSavingState"
-      :progress="100"
-      saving-indicator
-    />
     <div v-if="graphData" class="graph-wrapper">
-      <!-- <GraphProcessing /> -->
-      <!-- Keep only this instance of SimulationProgress -->
-
+      <GraphProcessing />
       <!-- Loading Spinner -->
-      <!-- <div v-if="graphForceStore.graphLoading" class="loading-overlay">
+      <div v-if="isLoadingGraph" class="loading-overlay">
         <div class="loading-spinner">
           <span class="loading loading-spinner loading-lg"></span>
         </div>
-      </div> -->
+      </div>
 
       <!-- Move graph selector to controls panel -->
       <div class="controls-panel">
@@ -103,26 +92,26 @@
 
         <!-- Org Chart Layout -->
         <!-- <button
-          class="btn btn-circle btn-sm bg-base-200/70 backdrop-blur tooltip tooltip-top mb-4 p-1"
-          @click="updateGraphType('orgChart')"
-          :class="{ 'btn-active': graphType === 'orgChart' }"
-          data-tip="Org Chart Layout"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke-width="1.5"
-            stroke="currentColor"
-            class="w-5 h-5"
+            class="btn btn-circle btn-sm bg-base-200/70 backdrop-blur tooltip tooltip-top mb-4 p-1"
+            @click="updateGraphType('orgChart')"
+            :class="{ 'btn-active': graphType === 'orgChart' }"
+            data-tip="Org Chart Layout"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5m.75-9l3-3 2.148 2.148A12.061 12.061 0 0116.5 7.605"
-            />
-          </svg>
-        </button> -->
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="w-5 h-5"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5m.75-9l3-3 2.148 2.148A12.061 12.061 0 0116.5 7.605"
+              />
+            </svg>
+          </button> -->
 
         <!-- Reset View Button -->
         <button
@@ -185,7 +174,6 @@
         :class="{
           'panel-inactive': selectedNode?.id !== panel.id,
           'panel-animating': panel.isRepositioning,
-          'panel-active': selectedNode?.id === panel.id, // Add this class
         }"
         :style="{
           left: panel.pos.x + 'px',
@@ -348,6 +336,8 @@
           </div>
         </div>
       </div>
+      <!-- Keep only this instance of SimulationProgress -->
+      <SimulationProgress :show="isSavingState" :progress="saveProgress" />
     </div>
     <div v-else class="empty-graph">
       <div
@@ -393,8 +383,6 @@
 import { ref, onMounted, watch, nextTick, onBeforeUnmount } from 'vue'
 import * as d3 from 'd3'
 import { useSubjectsStore } from '@/stores/subjectsStore'
-import { useGraphForceStore } from '@/stores/graphForceStore'
-import { storeToRefs } from 'pinia'
 import { db } from '@/db/db'
 import SimulationProgress from './components/SimulationProgress.vue'
 import MarkdownIt from 'markdown-it'
@@ -443,8 +431,6 @@ onMounted(() => {
 })
 
 const subjectsStore = useSubjectsStore()
-const graphForceStore = useGraphForceStore()
-const { graphLoading, openaiProgress } = storeToRefs(graphForceStore)
 const videoStore = useVideoStore()
 
 const graphData = ref(null)
@@ -984,8 +970,8 @@ function saveNodePositions() {
     nodePositions[node.id] = {
       x: node.x,
       y: node.y,
-      fx: isValidNumber(node.fx) ? node.fx : null,
-      fy: isValidNumber(node.fy) ? node.fy : null,
+      fx: node.fx,
+      fy: node.fy,
     }
   })
 
@@ -1121,10 +1107,10 @@ function drawLinks() {
       if (!d.source?.x || !d.source?.y || !d.target?.x || !d.target?.y)
         return null
 
-      const sourceX = d.source.x
-      const sourceY = d.source.y
-      const targetX = d.target.x
-      const targetY = d.target.y
+      const sourceX = isValidNumber(d.source.x) ? d.source.x : 0
+      const sourceY = isValidNumber(d.source.y) ? d.source.y : 0
+      const targetX = isValidNumber(d.target.x) ? d.target.x : 0
+      const targetY = isValidNumber(d.target.y) ? d.target.y : 0
 
       const dx = targetX - sourceX
       const dy = targetY - sourceY
@@ -1150,8 +1136,8 @@ function drawLinkLabels() {
     .attr('text-anchor', 'middle')
     .text((d) => d.relationship || '')
     .attr('dy', (d) => {
-      const dx = d.target.x - d.source.x
-      const dy = d.target.y - d.source.y
+      const dx = (d.target.x || 0) - (d.source.x || 0)
+      const dy = (d.target.y || 0) - (d.source.y || 0)
       const angle = Math.atan2(dy, dx)
       return angle > 0 ? '-15px' : '15px'
     })
@@ -1239,6 +1225,99 @@ function updatePositions() {
     })
 }
 
+function startPanelDrag(event, panel) {
+  const initialX = panel.pos.x
+  const initialY = panel.pos.y
+  const initialMouseX = event.clientX
+  const initialMouseY = event.clientY
+
+  function onPanelDrag(e) {
+    panel.pos.x = initialX + (e.clientX - initialMouseX)
+    panel.pos.y = initialY + (e.clientY - initialMouseY)
+  }
+
+  function stopPanelDrag() {
+    window.removeEventListener('mousemove', onPanelDrag)
+    window.removeEventListener('mouseup', stopPanelDrag)
+    saveCurrentGraphState()
+  }
+
+  window.addEventListener('mousemove', onPanelDrag)
+  window.addEventListener('mouseup', stopPanelDrag)
+}
+
+function handleRelationClick(nodeName) {
+  const node = nodes.value.find((n) => {
+    const normalizedNodeLabel = n.label.toLowerCase().trim()
+    const normalizedSearchName = nodeName.toLowerCase().trim()
+    if (normalizedNodeLabel === normalizedSearchName) return true
+
+    // Also handle punctuation differences
+    if (
+      normalizedNodeLabel.replace(/[^a-z0-9]/gi, '') ===
+      normalizedSearchName.replace(/[^a-z0-9]/gi, '')
+    ) {
+      return true
+    }
+    return false
+  })
+
+  if (node) {
+    selectedNode.value = node
+    highlightNode(node.id)
+    openDetailPanel(node)
+    zoomToNode(node)
+  }
+}
+
+function handlePanelClick(nodeData) {
+  selectedNode.value = nodeData
+  const node = nodes.value.find((n) => n.id === nodeData.id)
+  if (node) {
+    highlightNode(node.id)
+    zoomToNode(node)
+  }
+}
+
+function handleSvgClick() {
+  d3.selectAll('.node-shape')
+    .attr('stroke', COLORS.strokeDefault)
+    .attr('stroke-width', 1.5)
+  lastClickedNodeId.value = null
+}
+
+function resetView() {
+  if (!zoomBehavior || !svgRef.value) return
+
+  // Clear all open panels
+  openPanels.value = []
+  selectedNode.value = null
+
+  // Reset node highlights
+  d3.selectAll('.node-shape')
+    .attr('stroke', COLORS.strokeDefault)
+    .attr('stroke-width', COLORS.node.strokeWidth)
+
+  // Reset to default zoom and center
+  const svgEl = d3.select(svgRef.value)
+  const transform = d3.zoomIdentity
+    .translate(-WIDTH / 300, -HEIGHT / 111)
+    .scale(1)
+
+  // Apply the transform with a smooth transition
+  svgEl.transition().duration(750).call(zoomBehavior.transform, transform)
+
+  // Save the reset state
+  const currentState = subjectsStore.graphState || {}
+  const updatedState = {
+    ...currentState,
+    transform: { x: -WIDTH / 2, y: -HEIGHT / 2, k: 1 },
+    openPanels: [],
+    selectedNodeId: null,
+  }
+  subjectsStore.saveGraphState(updatedState)
+}
+
 function isValidNumber(n) {
   return typeof n === 'number' && !isNaN(n) && isFinite(n)
 }
@@ -1260,7 +1339,9 @@ function debounce(func, wait) {
 const saveCurrentGraphState = debounce(async () => {
   try {
     if (!svgRef.value || !nodes.value.length) return
+
     isSavingState.value = true
+    saveProgress.value = 30
 
     const state = {
       nodePositions: {},
@@ -1280,25 +1361,38 @@ const saveCurrentGraphState = debounce(async () => {
       }, {}),
     }
 
+    saveProgress.value = 60
+
     nodes.value.forEach((node) => {
       if (isValidNumber(node.x) && isValidNumber(node.y)) {
         state.nodePositions[node.id] = {
           x: node.x,
           y: node.y,
+          fx: isValidNumber(node.fx) ? node.fx : null,
+          fy: isValidNumber(node.fy) ? node.fy : null,
         }
       }
     })
 
-    await subjectsStore.saveGraphState(state)
+    saveProgress.value = 80
 
+    if (Object.keys(state.nodePositions).length > 0) {
+      await subjectsStore.saveGraphState(state)
+    }
+
+    saveProgress.value = 100
+
+    // Hide progress after a short delay
     setTimeout(() => {
       isSavingState.value = false
-    }, 1000)
+      saveProgress.value = 0
+    }, 500)
   } catch (error) {
     console.error('Error saving graph state:', error)
     isSavingState.value = false
+    saveProgress.value = 0
   }
-}, 1200)
+}, 200) // Changed from 500 to 200ms
 
 function handleMarkdownLinkClick(event) {
   const target = event.target.closest('a')
@@ -1460,79 +1554,6 @@ function toggleExpandPanel(panel, options = {}) {
 
   saveCurrentGraphState()
 }
-
-function handlePanelClick(nodeData) {
-  event.stopPropagation()
-  selectedNode.value = nodeData
-  const node = nodes.value.find((n) => n.id === nodeData.id)
-  if (node) {
-    highlightNode(node.id)
-    zoomToNode(node)
-  }
-  // Bring clicked panel to front
-  const panel = openPanels.value.find((p) => p.id === nodeData.id)
-  if (panel) {
-    const index = openPanels.value.indexOf(panel)
-    if (index > -1) {
-      openPanels.value.splice(index, 1)
-      openPanels.value.push(panel)
-    }
-  }
-}
-
-function startPanelDrag(event, panel) {
-  event.preventDefault()
-  const initialX = panel.pos.x
-  const initialY = panel.pos.y
-  const initialMouseX = event.clientX
-  const initialMouseY = event.clientY
-
-  function onPanelDrag(e) {
-    panel.pos.x = initialX + (e.clientX - initialMouseX)
-    panel.pos.y = initialY + (e.clientY - initialMouseY)
-  }
-
-  function stopPanelDrag() {
-    window.removeEventListener('mousemove', onPanelDrag)
-    window.removeEventListener('mouseup', stopPanelDrag)
-    saveCurrentGraphState()
-  }
-
-  window.addEventListener('mousemove', onPanelDrag)
-  window.addEventListener('mouseup', stopPanelDrag)
-}
-
-function resetView() {
-  if (!zoomBehavior || !svgRef.value) return
-
-  // Clear all open panels
-  openPanels.value = []
-  selectedNode.value = null
-
-  // Reset node highlights
-  d3.selectAll('.node-shape')
-    .attr('stroke', COLORS.strokeDefault)
-    .attr('stroke-width', COLORS.node.strokeWidth)
-
-  // Reset zoom and center
-  const transform = d3.zoomIdentity.translate(WIDTH / 2, HEIGHT / 2).scale(1)
-
-  // Apply transform with smooth transition
-  d3.select(svgRef.value)
-    .transition()
-    .duration(750)
-    .call(zoomBehavior.transform, transform)
-
-  // Save reset state
-  const currentState = subjectsStore.graphState || {}
-  const updatedState = {
-    ...currentState,
-    transform: { x: WIDTH / 2, y: HEIGHT / 2, k: 1 },
-    openPanels: [],
-    selectedNodeId: null,
-  }
-  subjectsStore.saveGraphState(updatedState)
-}
 </script>
 
 <style scoped>
@@ -1574,17 +1595,5 @@ function resetView() {
   opacity: 1;
   visibility: visible;
   z-index: 999;
-}
-
-.panel-active {
-  z-index: 100 !important;
-}
-
-.panel-inactive {
-  opacity: 0.8;
-}
-
-.panel-animating {
-  transition: all 0.3s ease-out;
 }
 </style>
