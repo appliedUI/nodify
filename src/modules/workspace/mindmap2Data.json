@@ -1,0 +1,283 @@
+{
+  "categories": [
+    { "name": "Level 0" },
+    { "name": "Level 1" },
+    { "name": "Level 2" }
+  ],
+  "nodes": [
+    {
+      "name": "quantumMechanics",
+      "title": "Quantum Mechanics",
+      "level": 0,
+      "category": 0,
+      "description": "A fundamental theory in physics describing nature at atomic and subatomic scales.",
+      "relationships": {
+        "connections": [
+          "waveParticleDuality",
+          "uncertaintyPrinciple",
+          "quantumEntanglement",
+          "schrodingersEquation",
+          "quantumTunneling"
+        ]
+      },
+      "generalKnowledge": "Quantum mechanics introduces concepts like wave-particle duality, uncertainty principle, and probability waves.",
+      "importance": 10,
+      "children": [
+        "waveParticleDuality",
+        "uncertaintyPrinciple",
+        "quantumEntanglement",
+        "schrodingersEquation",
+        "quantumTunneling",
+        "quantumFieldTheory"
+      ]
+    },
+    {
+      "name": "waveParticleDuality",
+      "title": "Wave-Particle Duality",
+      "level": 1,
+      "category": 1,
+      "description": "The concept that every particle exhibits both wave and particle properties.",
+      "relationships": {
+        "connections": ["quantumMechanics", "doubleSlitExperiment"]
+      },
+      "generalKnowledge": "Demonstrated through experiments showing particles like electrons exhibit interference patterns.",
+      "importance": 9,
+      "children": ["doubleSlitExperiment"]
+    },
+    {
+      "name": "uncertaintyPrinciple",
+      "title": "Uncertainty Principle",
+      "level": 1,
+      "category": 1,
+      "description": "A fundamental limit to the precision with which certain pairs of physical properties can be known.",
+      "relationships": {
+        "connections": ["quantumMechanics", "heisenberg"]
+      },
+      "generalKnowledge": "Formulated by Werner Heisenberg, it states that position and momentum cannot both be precisely determined.",
+      "importance": 9,
+      "children": ["heisenberg"]
+    },
+    {
+      "name": "quantumEntanglement",
+      "title": "Quantum Entanglement",
+      "level": 1,
+      "category": 1,
+      "description": "A physical phenomenon where particles remain interconnected regardless of distance.",
+      "relationships": {
+        "connections": ["quantumMechanics", "bellTheorem"]
+      },
+      "generalKnowledge": "Entangled particles have correlated properties, leading to instantaneous state determination.",
+      "importance": 8,
+      "children": ["bellTheorem"]
+    },
+    {
+      "name": "schrodingersEquation",
+      "title": "Schrödinger's Equation",
+      "level": 1,
+      "category": 1,
+      "description": "A mathematical equation that describes how the quantum state of a physical system changes over time.",
+      "relationships": {
+        "connections": ["quantumMechanics", "waveFunction"]
+      },
+      "generalKnowledge": "Central to quantum mechanics, it allows the calculation of the wave function of a system.",
+      "importance": 10,
+      "children": ["waveFunction"]
+    },
+    {
+      "name": "quantumTunneling",
+      "title": "Quantum Tunneling",
+      "level": 1,
+      "category": 1,
+      "description": "A quantum phenomenon where particles pass through potential barriers they classically shouldn't.",
+      "relationships": {
+        "connections": ["quantumMechanics", "semiconductors"]
+      },
+      "generalKnowledge": "Essential for technologies like tunnel diodes and the nuclear fusion in stars.",
+      "importance": 7,
+      "children": ["semiconductors"]
+    },
+    {
+      "name": "quantumFieldTheory",
+      "title": "Quantum Field Theory",
+      "level": 1,
+      "category": 1,
+      "description": "A theoretical framework that combines classical field theory, special relativity, and quantum mechanics.",
+      "relationships": {
+        "connections": ["quantumMechanics", "standardModel"]
+      },
+      "generalKnowledge": "Describes how particles are excitations in their respective fields.",
+      "importance": 8,
+      "children": ["standardModel"]
+    },
+    {
+      "name": "doubleSlitExperiment",
+      "title": "Double-Slit Experiment",
+      "level": 2,
+      "category": 2,
+      "description": "An experiment demonstrating the fundamental principles of quantum mechanics.",
+      "relationships": {
+        "connections": ["waveParticleDuality", "quantumMechanics"]
+      },
+      "generalKnowledge": "Shows that particles like electrons produce interference patterns, exhibiting wave-like behavior.",
+      "importance": 9,
+      "children": []
+    },
+    {
+      "name": "heisenberg",
+      "title": "Werner Heisenberg",
+      "level": 2,
+      "category": 2,
+      "description": "A pioneering physicist in the development of quantum mechanics.",
+      "relationships": {
+        "connections": ["uncertaintyPrinciple"]
+      },
+      "generalKnowledge": "Known for formulating the Uncertainty Principle.",
+      "importance": 7,
+      "children": []
+    },
+    {
+      "name": "bellTheorem",
+      "title": "Bell's Theorem",
+      "level": 2,
+      "category": 2,
+      "description": "A theorem that shows that certain predictions of quantum mechanics are incompatible with local hidden variable theories.",
+      "relationships": {
+        "connections": ["quantumEntanglement"]
+      },
+      "generalKnowledge": "Provides a way to test the validity of quantum entanglement experimentally.",
+      "importance": 8,
+      "children": []
+    },
+    {
+      "name": "waveFunction",
+      "title": "Wave Function",
+      "level": 2,
+      "category": 2,
+      "description": "A mathematical description of the quantum state of a system.",
+      "relationships": {
+        "connections": ["schrodingersEquation"]
+      },
+      "generalKnowledge": "Encapsulates the probabilities of a system's measurable properties.",
+      "importance": 9,
+      "children": []
+    },
+    {
+      "name": "semiconductors",
+      "title": "Semiconductors",
+      "level": 2,
+      "category": 2,
+      "description": "Materials with electrical conductivity between conductors and insulators.",
+      "relationships": {
+        "connections": ["quantumTunneling"]
+      },
+      "generalKnowledge": "Essential for modern electronics, utilizing quantum tunneling in devices like tunnel diodes.",
+      "importance": 6,
+      "children": []
+    },
+    {
+      "name": "standardModel",
+      "title": "Standard Model",
+      "level": 2,
+      "category": 2,
+      "description": "A theory concerning the electromagnetic, weak, and strong nuclear interactions.",
+      "relationships": {
+        "connections": ["quantumFieldTheory"]
+      },
+      "generalKnowledge": "Describes the fundamental particles and forces, except gravity.",
+      "importance": 9,
+      "children": []
+    }
+  ],
+  "links": [
+    {
+      "source": "quantumMechanics",
+      "target": "waveParticleDuality",
+      "relationship": "Explains"
+    },
+    {
+      "source": "quantumMechanics",
+      "target": "uncertaintyPrinciple",
+      "relationship": "Includes"
+    },
+    {
+      "source": "quantumMechanics",
+      "target": "quantumEntanglement",
+      "relationship": "Includes"
+    },
+    {
+      "source": "quantumMechanics",
+      "target": "schrodingersEquation",
+      "relationship": "Includes"
+    },
+    {
+      "source": "quantumMechanics",
+      "target": "quantumTunneling",
+      "relationship": "Includes"
+    },
+    {
+      "source": "quantumMechanics",
+      "target": "quantumFieldTheory",
+      "relationship": "Related To"
+    },
+    {
+      "source": "waveParticleDuality",
+      "target": "doubleSlitExperiment",
+      "relationship": "Demonstrated By"
+    },
+    {
+      "source": "uncertaintyPrinciple",
+      "target": "heisenberg",
+      "relationship": "Formulated By"
+    },
+    {
+      "source": "quantumEntanglement",
+      "target": "bellTheorem",
+      "relationship": "Explored By"
+    },
+    {
+      "source": "schrodingersEquation",
+      "target": "waveFunction",
+      "relationship": "Describes"
+    },
+    {
+      "source": "quantumTunneling",
+      "target": "semiconductors",
+      "relationship": "Utilized In"
+    },
+    {
+      "source": "quantumFieldTheory",
+      "target": "standardModel",
+      "relationship": "Foundation For"
+    },
+    {
+      "source": "waveParticleDuality",
+      "target": "quantumMechanics",
+      "relationship": "Part Of"
+    },
+    {
+      "source": "uncertaintyPrinciple",
+      "target": "quantumMechanics",
+      "relationship": "Part Of"
+    },
+    {
+      "source": "quantumEntanglement",
+      "target": "quantumMechanics",
+      "relationship": "Part Of"
+    },
+    {
+      "source": "schrodingersEquation",
+      "target": "quantumMechanics",
+      "relationship": "Part Of"
+    },
+    {
+      "source": "quantumTunneling",
+      "target": "quantumMechanics",
+      "relationship": "Part Of"
+    },
+    {
+      "source": "quantumFieldTheory",
+      "target": "quantumMechanics",
+      "relationship": "Extends"
+    }
+  ]
+}

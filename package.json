@@ -1,0 +1,168 @@
+{
+  "name": "Nodify",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./electron/main.cjs",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "electron:dev": "cross-env ELECTRON=true NODE_ENV=development npx concurrently -k \"vite\" \"wait-on tcp:5173 && electron .\"",
+    "electron:build": "npm run prepare-ffmpeg && cross-env ELECTRON=true vite build && electron-builder",
+    "format": "prettier --write .",
+    "copy-ffmpeg:win": "if not exist resources\\ffmpeg\\win mkdir resources\\ffmpeg\\win && copy /Y \"node_modules\\ffmpeg-static\\ffmpeg.exe\" resources\\ffmpeg\\win\\",
+    "copy-ffmpeg:mac": "mkdir -p resources/ffmpeg/mac && cp \"$(npm root)/ffmpeg-static/ffmpeg\" resources/ffmpeg/mac/ && chmod +x resources/ffmpeg/mac/ffmpeg",
+    "copy-ffmpeg:linux": "mkdir -p resources/ffmpeg/linux && cp \"$(npm root)/ffmpeg-static/ffmpeg\" resources/ffmpeg/linux/ && chmod +x resources/ffmpeg/linux/ffmpeg",
+    "copy-ffprobe:win": "if not exist resources\\ffprobe\\win mkdir resources\\ffprobe\\win && copy /Y \"node_modules\\@ffprobe-installer\\win32-x64\\ffprobe.exe\" resources\\ffprobe\\win\\",
+    "copy-ffprobe:mac": "mkdir -p resources/ffprobe/mac && cp \"$(npm root)/@ffprobe-installer/darwin-x64/ffprobe\" resources/ffprobe/mac/ && chmod +x resources/ffprobe/mac/ffprobe",
+    "copy-ffprobe:linux": "mkdir -p resources/ffprobe/linux && cp \"$(npm root)/@ffprobe-installer/linux-x64/ffprobe\" resources/ffprobe/linux/ && chmod +x resources/ffprobe/linux/ffprobe",
+    "prepare-ffmpeg": "bash scripts/setup-ffmpeg.sh",
+    "prepare-ffmpeg:win": "scripts\\setup-ffmpeg.bat",
+    "create-resources": "mkdir resources 2>nul || exit 0",
+    "electron:build:win": "npm run setup-icons:win && npm run prepare-ffmpeg:win && cross-env ELECTRON=true vite build && electron-builder --win",
+    "electron:build:mac": "npm run setup-icons:mac && npm run prepare-ffmpeg && cross-env ELECTRON=true vite build && electron-builder --mac",
+    "electron:build:linux": "npm run setup-icons:linux && npm run prepare-ffmpeg && cross-env ELECTRON=true vite build && electron-builder --linux",
+    "setup-icons": "node scripts/setup-icons.js",
+    "setup-icons:win": "if not exist build\\icons mkdir build\\icons",
+    "setup-icons:mac": "mkdir -p build/icons",
+    "setup-icons:linux": "mkdir -p build/icons"
+  },
+  "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@ffprobe-installer/ffprobe": "^2.1.2",
+    "@heroicons/vue": "^2.2.0",
+    "@vueup/vue-quill": "^1.2.0",
+    "ajv": "^6.12.6",
+    "axios": "^1.7.9",
+    "clipboard": "^2.0.11",
+    "crypto-js": "^4.2.0",
+    "d3": "^7.9.0",
+    "dexie": "^3.2.4",
+    "ffmpeg-static": "^5.2.0",
+    "fluent-ffmpeg": "^2.1.2",
+    "html2pdf.js": "^0.10.2",
+    "markdown-it": "^14.1.0",
+    "marked": "^15.0.5",
+    "mitt": "^3.0.1",
+    "openai": "^4.77.0",
+    "pdfjs-dist": "^2.16.105",
+    "pinia": "^2.3.0",
+    "prismjs": "^1.29.0",
+    "puppeteer": "^23.11.1",
+    "quill": "^2.0.3",
+    "shiki": "^1.24.4",
+    "uuid": "^11.0.3",
+    "vue": "^3.3.4",
+    "vue-draggable-next": "^2.2.1",
+    "vue-markdown-render": "^2.2.1",
+    "vue-router": "^4.2.5",
+    "vue3-draggable-resizable": "^1.6.5",
+    "vue3-toastify": "^0.2.8",
+    "vue3-youtube": "^0.1.9",
+    "youtube-transcript": "^1.2.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.15",
+    "@vitejs/plugin-vue": "^4.3.4",
+    "autoprefixer": "^10.4.16",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "daisyui": "^3.7.7",
+    "electron": "^26.2.1",
+    "electron-builder": "^24.6.4",
+    "postcss": "^8.4.30",
+    "prettier": "^2.8.0",
+    "tailwindcss": "^3.3.3",
+    "terser": "^5.37.0",
+    "vite": "^4.4.9",
+    "wait-on": "^7.2.0"
+  },
+  "description": "An AI-powered note-taking and transcription app",
+  "author": {
+    "name": "Your Name",
+    "email": "your.email@example.com"
+  },
+  "build": {
+    "appId": "com.notifyapp.app",
+    "productName": "Nodify",
+    "mac": {
+      "icon": "build/icons/icon.png",
+      "identity": null,
+      "hardenedRuntime": false,
+      "entitlements": null,
+      "entitlementsInherit": null,
+      "gatekeeperAssess": false,
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ]
+    },
+    "win": {
+      "icon": "build/icons/icon.png",
+      "target": "nsis"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb",
+        "rpm"
+      ],
+      "category": "Office",
+      "maintainer": "Your Name <your.email@example.com>",
+      "vendor": "Your Company",
+      "synopsis": "AI-powered note-taking and transcription app",
+      "icon": "build/icons/icon.png",
+      "artifactName": "${productName}-${version}.${ext}"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "resources/**/*",
+      "!build/icons/*"
+    ],
+    "extraResources": [
+      {
+        "from": "build/icons",
+        "to": ".",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "resources/ffmpeg/${os}",
+        "to": "ffmpeg",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "resources/ffprobe/${os}",
+        "to": "ffprobe",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "encrypt",
+        "to": "assets/encrypt",
+        "filter": [
+          "*.cjs"
+        ]
+      }
+    ],
+    "directories": {
+      "buildResources": "build",
+      "output": "release/${version}"
+    },
+    "asarUnpack": [
+      "resources/ffmpeg/**/*",
+      "resources/ffprobe/**/*",
+      "assets/encrypt/**/*"
+    ]
+  }
+}

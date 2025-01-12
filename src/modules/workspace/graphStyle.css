@@ -1,0 +1,285 @@
+.force-graph-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.mindmap-container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* Controls and Overlay Positioning */
+.controls-panel {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 300px;
+  z-index: 1;
+}
+
+.fixed-controls {
+  position: fixed;
+  bottom: 20px;
+  right: 340px;
+  z-index: 1;
+  display: flex;
+  gap: 8px;
+}
+
+.reset-view-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 340px;
+  z-index: 1000;
+}
+
+/* Panel Grid Layout */
+.panel-container {
+  position: fixed;
+  user-select: none;
+  cursor: move;
+}
+
+.panel-container.panel-animating {
+  transition: all 0.3s ease-out;
+}
+
+.panel-container:nth-child(3n + 1) {
+  left: 20px;
+}
+
+.panel-container:nth-child(3n + 2) {
+  left: calc(384px + 40px);
+}
+
+.panel-container:nth-child(3n + 3) {
+  left: calc((384px + 20px) * 2);
+}
+
+/* Rest of your existing styles */
+.panel-container .card {
+  cursor: default;
+  transition: all 0.2s ease;
+  background-color: rgba(44, 44, 44, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.panel-inactive {
+  opacity: 0.4;
+  filter: grayscale(0.3);
+}
+
+.btn-active {
+  background-color: rgba(250, 121, 33, 0.3) !important;
+  border-color: #fa7921;
+}
+
+/* Optionally, add styles for empty state */
+.empty-graph {
+  display: flex;
+  justify-content: left;
+  align-items: center;
+  height: 100%;
+  color: #888;
+  font-size: 1.2rem;
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.loading-spinner {
+  color: #f48c06;
+}
+
+.empty-graph {
+  @apply w-full h-full flex items-center justify-center;
+  min-height: 400px;
+}
+
+/* Add these styles for markdown content */
+.markdown-content :deep(a) {
+  @apply bg-base-100 px-4 py-2 rounded-lg my-4 text-sm;
+  color: #2a9d8f !important;
+  text-decoration: none;
+}
+.markdown-content :deep(a:hover) {
+  @apply bg-base-300 px-4 py-2 rounded-lg my-4 text-sm;
+}
+
+.markdown-content :deep(pre) {
+  @apply bg-gray-800 p-4 rounded-lg my-4 text-white;
+}
+
+.markdown-content :deep(code) {
+  @apply font-mono text-sm text-gray-200;
+}
+
+.markdown-content :deep(p) {
+  @apply my-2 text-gray-200;
+}
+.markdown-content :deep(h3) {
+  @apply my-2;
+  font-size: 20px;
+  color: #f48c04 !important;
+  text-transform: none;
+}
+
+.markdown-content :deep(ul) {
+  @apply list-disc pl-6 my-4 text-gray-200;
+}
+
+.markdown-content :deep(ol) {
+  @apply list-decimal pl-6 my-4 text-gray-200;
+}
+
+.markdown-content :deep(blockquote) {
+  @apply border-l-4 border-primary pl-4 my-4 italic text-gray-300;
+}
+
+.markdown-content :deep(.copy-btn) {
+  @apply opacity-0 transition-opacity duration-200;
+}
+
+.markdown-content :deep(pre:hover .copy-btn) {
+  @apply opacity-100;
+}
+
+/* Add Tailwind typography plugin styles */
+:deep(.prose-invert) {
+  @apply text-gray-200;
+}
+
+:deep(.prose-invert strong) {
+  @apply text-white;
+}
+
+:deep(.prose-invert a) {
+  @apply text-primary hover:text-primary-focus;
+}
+
+:deep(.prose-invert code) {
+  @apply text-primary-content;
+}
+
+:deep(.prose-invert pre) {
+  @apply bg-gray-800;
+}
+
+/* Additional styles for a very dark theme */
+.markdown-content :deep(body) {
+  @apply bg-gray-900 text-gray-100;
+}
+
+.markdown-content :deep(h1),
+.markdown-content :deep(h2),
+.markdown-content :deep(h3),
+.markdown-content :deep(h4),
+.markdown-content :deep(h5),
+.markdown-content :deep(h6) {
+  @apply text-gray-100;
+}
+
+.markdown-content :deep(table) {
+  @apply bg-gray-800 text-gray-100;
+}
+
+.markdown-content :deep(th),
+.markdown-content :deep(td) {
+  @apply border border-gray-700;
+}
+
+.markdown-content :deep(blockquote) {
+  @apply border-l-4 border-primary pl-4 my-4 italic text-gray-300;
+}
+
+/* VSCode Dark+ theme for code blocks */
+.markdown-content :deep(pre[class*='language-']) {
+  @apply bg-[#1e1e1e] text-[#d4d4d4];
+}
+
+.markdown-content :deep(code[class*='language-']) {
+  @apply bg-[#1e1e1e] text-[#d4d4d4];
+}
+
+.markdown-content :deep(.token.comment),
+.markdown-content :deep(.token.prolog),
+.markdown-content :deep(.token.doctype),
+.markdown-content :deep(.token.cdata) {
+  @apply text-[#6a9955];
+}
+
+.markdown-content :deep(.token.punctuation) {
+  @apply text-[#d4d4d4];
+}
+
+.markdown-content :deep(.token.property),
+.markdown-content :deep(.token.tag),
+.markdown-content :deep(.token.constant),
+.markdown-content :deep(.token.symbol),
+.markdown-content :deep(.token.deleted) {
+  @apply text-[#569cd6];
+}
+
+.markdown-content :deep(.token.boolean),
+.markdown-content :deep(.token.number) {
+  @apply text-[#b5cea8];
+}
+
+.markdown-content :deep(.token.selector),
+.markdown-content :deep(.token.attr-name),
+.markdown-content :deep(.token.string),
+.markdown-content :deep(.token.char),
+.markdown-content :deep(.token.builtin),
+.markdown-content :deep(.token.inserted) {
+  @apply text-[#ce9178];
+}
+
+.markdown-content :deep(.token.operator),
+.markdown-content :deep(.token.entity),
+.markdown-content :deep(.token.url),
+.markdown-content :deep(.token.variable) {
+  @apply text-[#d4d4d4];
+}
+
+.markdown-content :deep(.token.atrule),
+.markdown-content :deep(.token.attr-value),
+.markdown-content :deep(.token.function),
+.markdown-content :deep(.token.class-name) {
+  @apply text-[#dcdcaa];
+}
+
+.markdown-content :deep(.token.keyword) {
+  @apply text-[#569cd6];
+}
+
+.markdown-content :deep(.token.regex),
+.markdown-content :deep(.token.important) {
+  @apply text-[#d16969];
+}
+
+.markdown-content :deep(.token.important),
+.markdown-content :deep(.token.bold) {
+  @apply font-bold;
+}
+
+.markdown-content :deep(.token.italic) {
+  font-style: italic;
+}
+
+.markdown-content :deep(.token.entity) {
+  @apply cursor-help;
+}

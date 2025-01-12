@@ -1,0 +1,150 @@
+/* Professional Dark Theme with Google Fonts */
+.markdown-modal {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Helvetica, Arial, sans-serif;
+  line-height: 1.8;
+  color: #e0e0e0;
+  background-color: #121212;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0.7rem 1rem;
+  overflow-y: auto;
+  max-height: 80vh;
+  border-radius: 12px;
+}
+
+.markdown-modal h1,
+.markdown-modal h2,
+.markdown-modal h3 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 100;
+  margin: 0 0 1em;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.markdown-modal h1 {
+  font-family: 'Roboto', sans-serif !important;
+  font-size: 2.2rem;
+  border-bottom: 2px solid #333333;
+  padding-bottom: 0.6rem;
+  letter-spacing: -0.03em;
+}
+
+.markdown-modal h2 {
+  font-size: 2rem;
+  letter-spacing: -0.02em;
+}
+
+.markdown-modal h3 {
+  font-size: 1.6rem;
+  letter-spacing: -0.01em;
+}
+
+.markdown-modal p {
+  margin: 1.2em 0;
+  font-size: 1.1rem;
+  color: #e0e0e0;
+  font-weight: 400;
+}
+
+.markdown-modal a {
+  color: #8ab4f8;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.markdown-modal a:hover {
+  color: #a8c7fa;
+  text-decoration: underline;
+}
+
+.markdown-modal code {
+  font-family: 'JetBrains Mono', monospace;
+  background-color: #1e1e1e;
+  padding: 0.25em 0.5em;
+  border-radius: 6px;
+  font-size: 0.9em;
+  color: #dcdcaa;
+}
+
+.markdown-modal pre {
+  background-color: #1e1e1e;
+  padding: 1.2rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1.8em 0;
+  border: 1px solid #333333;
+}
+
+.markdown-modal pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+.markdown-modal blockquote {
+  border-left: 4px solid #444444;
+  padding: 0 1.2rem;
+  margin: 1.8em 0;
+  color: #a1a1a6;
+  font-style: italic;
+}
+
+.markdown-modal ul,
+.markdown-modal ol {
+  margin: 1.8em 0;
+  padding-left: 1.8em;
+}
+
+.markdown-modal li {
+  margin: 0.6em 0;
+  padding-left: 0.5em;
+}
+
+.markdown-modal img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 1.8em 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Enhanced Dark Mode */
+.dark .markdown-modal {
+  color: #e0e0e0;
+  background-color: #121212;
+}
+
+.dark .markdown-modal h1,
+.dark .markdown-modal h2,
+.dark .markdown-modal h3 {
+  color: #ffffff;
+}
+
+.dark .markdown-modal p {
+  color: #e0e0e0;
+}
+
+.dark .markdown-modal code {
+  background-color: #1e1e1e;
+  color: #dcdcaa;
+}
+
+.dark .markdown-modal pre {
+  background-color: #1e1e1e;
+  border-color: #333333;
+}
+
+.dark .markdown-modal blockquote {
+  border-left-color: #444444;
+  color: #a1a1a6;
+}
+
+.dark .markdown-modal a {
+  color: #8ab4f8;
+}
+
+.dark .markdown-modal a:hover {
+  color: #a8c7fa;
+}

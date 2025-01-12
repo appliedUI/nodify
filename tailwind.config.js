@@ -1,0 +1,73 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        primary: '#101D22',
+        secondary: '#11403B',
+        accent: '#F48C06',
+        error: '#B20D30',
+        warning: '#D84727',
+        info: '#E76F51',
+        success: '#2A9D8F',
+        neutral: '#834009',
+      },
+      fontFamily: {
+        nunito: ['Nunito Sans', 'sans-serif'],
+        playwrite: ['Playwrite DK Loopet', 'cursive'],
+        sans: [
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'Roboto',
+          'Helvetica Neue',
+          'Arial',
+          'sans-serif',
+        ],
+      },
+    },
+  },
+  plugins: [require('daisyui'), require('@tailwindcss/typography')],
+  daisyui: {
+    themes: [
+      {
+        light: {
+          'base-100': '#ffffff',
+          'base-200': '#f2f2f2',
+          'base-300': '#e5e5e5',
+          'base-content': '#101D22',
+          primary: '#101D22',
+          secondary: '#11403B',
+          accent: '#F48C06',
+          neutral: '#834009',
+          error: '#B20D30',
+          warning: '#D84727',
+          info: '#E76F51',
+          success: '#2A9D8F',
+        },
+        dark: {
+          'base-100': '#0C1519',
+          'base-200': '#101D22',
+          'base-300': '#0B2825',
+          'base-content': '#ffffff',
+          primary: '#2A9D8F',
+          secondary: '#11403B',
+          accent: '#F48C06',
+          neutral: '#834009',
+          error: '#B20D30',
+          warning: '#D84727',
+          info: '#E76F51',
+          success: '#2A9D8F',
+        },
+      },
+    ],
+    darkTheme: 'dark',
+    base: true,
+    styled: true,
+    utils: true,
+    prefix: '',
+    logs: true,
+    themeRoot: ':root',
+  },
+}

@@ -1,0 +1,187 @@
+{
+  "nodes": [
+    {
+      "id": "modernArt",
+      "label": "Modern Art",
+      "level": 0,
+      "description": "An art movement characterized by a departure from traditional styles, emphasizing innovation and exploration of new techniques and concepts.",
+      "relationships": {
+        "connections": [
+          "impressionism",
+          "cubism",
+          "surrealism",
+          "abstractExpressionism",
+          "popArt"
+        ]
+      },
+      "generalKnowledge": "Modern art emerged in the late 19th century and spanned various styles and movements focused on experimentation.",
+      "importance": 10,
+      "children": [
+        "impressionism",
+        "cubism",
+        "surrealism",
+        "abstractExpressionism",
+        "popArt",
+        "modernArtLegacy"
+      ]
+    },
+    {
+      "id": "impressionism",
+      "label": "Impressionism",
+      "level": 1,
+      "description": "An art movement focused on capturing light and natural forms through loose brushwork and vibrant colors.",
+      "relationships": {
+        "connections": ["modernArt", "claudeMonet"]
+      },
+      "generalKnowledge": "Pioneered by artists like Claude Monet and Edgar Degas, it marked a shift from realistic depictions to personal impressions.",
+      "importance": 9,
+      "children": ["claudeMonet"]
+    },
+    {
+      "id": "cubism",
+      "label": "Cubism",
+      "level": 1,
+      "description": "An avant-garde movement that fragmented objects into geometric shapes, representing multiple perspectives simultaneously.",
+      "relationships": {
+        "connections": ["modernArt", "pabloPicasso"]
+      },
+      "generalKnowledge": "Developed by Pablo Picasso and Georges Braque, Cubism revolutionized visual representation.",
+      "importance": 9,
+      "children": ["pabloPicasso"]
+    },
+    {
+      "id": "surrealism",
+      "label": "Surrealism",
+      "level": 1,
+      "description": "An artistic movement aimed at unlocking the subconscious mind through dreamlike and irrational imagery.",
+      "relationships": {
+        "connections": ["modernArt", "salvadorDali"]
+      },
+      "generalKnowledge": "Artists like Salvador Dalí and René Magritte explored the unconscious through imaginative works.",
+      "importance": 8,
+      "children": ["salvadorDali"]
+    },
+    {
+      "id": "abstractExpressionism",
+      "label": "Abstract Expressionism",
+      "level": 1,
+      "description": "A post-World War II movement emphasizing spontaneous, abstract forms and emotional intensity.",
+      "relationships": {
+        "connections": ["modernArt", "jacksonPollock"]
+      },
+      "generalKnowledge": "Prominent figures include Jackson Pollock and Mark Rothko, whose works conveyed profound emotional depth.",
+      "importance": 10,
+      "children": ["jacksonPollock"]
+    },
+    {
+      "id": "popArt",
+      "label": "Pop Art",
+      "level": 1,
+      "description": "A movement that challenged fine art traditions by incorporating imagery from popular culture and mass media.",
+      "relationships": {
+        "connections": ["modernArt", "andyWarhol"]
+      },
+      "generalKnowledge": "Andy Warhol and Roy Lichtenstein celebrated consumerism and everyday objects in their art.",
+      "importance": 7,
+      "children": ["andyWarhol"]
+    },
+    {
+      "id": "modernArtLegacy",
+      "label": "Modern Art Legacy",
+      "level": 1,
+      "description": "The enduring influence of modern art on contemporary practices and cultural perspectives.",
+      "relationships": {
+        "connections": ["modernArt", "postmodernArt"]
+      },
+      "generalKnowledge": "Modern art laid the foundation for postmodernism and continues to inspire innovation.",
+      "importance": 8,
+      "children": ["postmodernArt"]
+    },
+    {
+      "id": "claudeMonet",
+      "label": "Claude Monet",
+      "level": 2,
+      "description": "A leading figure in Impressionism, known for his series paintings of water lilies and landscapes.",
+      "relationships": {
+        "connections": ["impressionism"]
+      },
+      "generalKnowledge": "His work, 'Impression, Sunrise,' gave the Impressionist movement its name.",
+      "importance": 8,
+      "children": []
+    },
+    {
+      "id": "pabloPicasso",
+      "label": "Pablo Picasso",
+      "level": 2,
+      "description": "A Spanish artist who co-founded Cubism and revolutionized modern art.",
+      "relationships": {
+        "connections": ["cubism"]
+      },
+      "generalKnowledge": "His works include 'Les Demoiselles d'Avignon' and 'Guernica.'",
+      "importance": 9,
+      "children": []
+    },
+    {
+      "id": "salvadorDali",
+      "label": "Salvador Dalí",
+      "level": 2,
+      "description": "A surrealist artist renowned for his dreamlike and eccentric imagery.",
+      "relationships": {
+        "connections": ["surrealism"]
+      },
+      "generalKnowledge": "Known for works like 'The Persistence of Memory.'",
+      "importance": 8,
+      "children": []
+    },
+    {
+      "id": "jacksonPollock",
+      "label": "Jackson Pollock",
+      "level": 2,
+      "description": "An influential figure in Abstract Expressionism, famous for his drip painting technique.",
+      "relationships": {
+        "connections": ["abstractExpressionism"]
+      },
+      "generalKnowledge": "His technique emphasized movement and spontaneity.",
+      "importance": 9,
+      "children": []
+    },
+    {
+      "id": "andyWarhol",
+      "label": "Andy Warhol",
+      "level": 2,
+      "description": "A leading figure in Pop Art, known for his works featuring consumer products and celebrities.",
+      "relationships": {
+        "connections": ["popArt"]
+      },
+      "generalKnowledge": "His iconic works include 'Campbell's Soup Cans' and portraits of Marilyn Monroe.",
+      "importance": 8,
+      "children": []
+    },
+    {
+      "id": "postmodernArt",
+      "label": "Postmodern Art",
+      "level": 2,
+      "description": "A movement that critiques and builds upon modern art through deconstruction and eclecticism.",
+      "relationships": {
+        "connections": ["modernArtLegacy"]
+      },
+      "generalKnowledge": "Postmodern art challenges notions of originality and embraces multiple perspectives.",
+      "importance": 7,
+      "children": []
+    }
+  ],
+  "links": [
+    { "source": "modernArt", "target": "impressionism", "relationship": "Includes" },
+    { "source": "modernArt", "target": "cubism", "relationship": "Includes" },
+    { "source": "modernArt", "target": "surrealism", "relationship": "Includes" },
+    { "source": "modernArt", "target": "abstractExpressionism", "relationship": "Includes" },
+    { "source": "modernArt", "target": "popArt", "relationship": "Includes" },
+    { "source": "modernArt", "target": "modernArtLegacy", "relationship": "Leads To" },
+    { "source": "impressionism", "target": "claudeMonet", "relationship": "Pioneered By" },
+    { "source": "cubism", "target": "pabloPicasso", "relationship": "Pioneered By" },
+    { "source": "surrealism", "target": "salvadorDali", "relationship": "Pioneered By" },
+    { "source": "abstractExpressionism", "target": "jacksonPollock", "relationship": "Represented By" },
+    { "source": "popArt", "target": "andyWarhol", "relationship": "Pioneered By" },
+    { "source": "modernArtLegacy", "target": "postmodernArt", "relationship": "Influences" }
+  ]
+}

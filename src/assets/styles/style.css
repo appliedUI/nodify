@@ -1,0 +1,250 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    @apply bg-[#040708];
+  }
+  
+  html, body {
+    @apply min-h-screen;
+    background: none;
+  }
+}
+
+@layer components {
+  .gradient-background {
+    background: radial-gradient(circle at center, #101D22 0%, #040708 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    width: 100%;
+  }
+}
+
+/* Font imports */
+@font-face {
+  font-family: 'Nunito Sans';
+  src: url('../fonts/Nunito_Sans/NunitoSans-VariableFont_YTLC,opsz,wdth,wght.ttf') format('truetype-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nunito Sans';
+  src: url('../fonts/Nunito_Sans/NunitoSans-Italic-VariableFont_YTLC,opsz,wdth,wght.ttf') format('truetype-variations');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Playwrite DK Loopet';
+  src: url('../fonts/Playwrite_DK_Loopet/PlaywriteDKLoopet-VariableFont_wght.ttf') format('truetype-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Root styles */
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Better default focus styles */
+*:focus {
+  @apply outline-none ring-2 ring-primary ring-opacity-50;
+}
+
+/* instll playwrite */
+.playwrite {
+  font-family: 'Playwrite DK Loopet', sans-serif;
+}
+
+/* Reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #333;
+}
+
+/* Typography */
+h1 {
+  font-family: 'Playwrite DK Loopet', 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+h3 {
+  font-family: 'Nunito Sans', sans-serif;
+  font-weight: 500;
+  font-size: .8rem;
+  text-transform: uppercase;
+}
+
+
+h2, h4, h5, h6 {
+  font-family: 'Nunito Sans', sans-serif;
+  font-weight: 600;
+}
+
+p, span, div, a, button, input, textarea {
+  font-family: 'Nunito Sans', sans-serif;
+}
+
+/* custom */
+
+.hover-scale {
+  opacity: .7;
+  display: inline-block;
+  transition: transform 0.1s linear, color 0.1s linear;
+}
+
+.hover-scale:hover {
+  opacity: 1;
+  transform: scale(1.1);
+  color: #ff6347; /* Change to desired color */
+}
+
+
+.red-hover:hover {
+  filter: invert(19%) sepia(100%) saturate(7483%) hue-rotate(0deg) brightness(101%) contrast(119%);
+}
+
+/* Container that wraps the input and gives us a place to draw the border */
+.animated-border {
+  position: relative;       /* Needed for absolute positioning of ::before */
+  padding: 6px;            /* Space for the border thickness */
+  border-radius: 12px;     /* Rounded corners if desired */
+  display: inline-block;    /* Keep the container sized around the input */
+}
+
+/* The actual input styling */
+.my-cool-input {
+
+           /* Adjust as needed */
+  border: none;             /* We'll do the "border" via .animated-border */
+  outline: none;            /* Remove the default focus outline */
+  border-radius: 8px;
+  /*  box-shadow: 0 4px 33px rgba(226, 125, 125, 0.5); Subtle drop shadow */
+   box-shadow: 0 4px 33px rgba(0, 0, 0, 0.5); /*Subtle drop shadow */
+
+
+}
+
+/* Create the gradient border via a pseudo-element */
+.animated-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;                        /* Fill the container */
+  border-radius: 12px;            /* Match .animated-border’s radius */
+  padding: 3px;                   /* Actual border thickness */
+  background: linear-gradient(
+    45deg,
+    /* Use the colors you provided in a multi-stop gradient */
+    #101D22,
+    #11403B,
+    #E76F51,
+    #2A9D8F,
+    #834009,
+    #101D22
+  );
+  background-size: 900% 400%;     /* Allows the gradient to move fluidly */
+  pointer-events: none;           /* Ensure the input field is clickable */
+
+  /* Mask out the center, so we only see the outer ring (the "border"). */
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+
+  /* The animation: slow, subtle movement of background */
+  animation: borderAnimation 40s ease infinite; 
+  /* Increase to 60s, 90s, etc. for even slower movement */
+}
+
+/* Keyframes for the gradient to smoothly oscillate left→right or diagonal */
+@keyframes borderAnimation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 200% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Interactive gradient background */
+.interactive-gradient {
+  background: linear-gradient(
+    45deg,
+    #101D22,
+    #11403B,
+    #E76F51,
+    #2A9D8F,
+    #834009,
+    #101D22
+  );
+  background-size: 400% 400%;
+  transition: background-position 0.1s ease;
+}
+
+/* Interactive gradient border */
+.interactive-border {
+  position: relative;
+  border-radius: 50%;
+}
+
+.interactive-border::before {
+  content: "";
+  position: absolute;
+  inset: -4px; /* Adjust to control the border thickness */
+  border-radius: 50%;
+  padding: 4px; /* Adjust to control the border thickness */
+  background: radial-gradient(
+    circle,
+    #101D22,
+    #11403B,
+    #E76F51,
+    #2A9D8F,
+    #834009,
+    #101D22
+  );
+  background-size: 200% 200%;
+  pointer-events: none;
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  transition: background-position 0.1s ease;
+}
+
+/* Hide scrollbars for WebKit browsers (Chrome, Safari) */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbars for Firefox */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+}
+
