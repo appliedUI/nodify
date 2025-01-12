@@ -191,15 +191,15 @@ const checkAvailability = async (showToast = true) => {
       }
     } else {
       isNameValidated.value = true
-      if (showToast) {
-        toast('This workspace name is available', {
-          theme: 'auto',
-          type: 'success',
-          position: 'top-center',
-          autoClose: 800,
-          transition: 'slide',
-        })
-      }
+      // if (showToast) {
+      //   toast('This workspace name is available', {
+      //     theme: 'auto',
+      //     type: 'success',
+      //     position: 'top-center',
+      //     autoClose: 800,
+      //     transition: 'slide',
+      //   })
+      // }
     }
   } catch (error) {
     console.error('Error checking availability:', error)
