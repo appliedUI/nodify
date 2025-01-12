@@ -1139,6 +1139,30 @@ function drawLinks() {
     })
 }
 
+function handleRelationClick(nodeName) {
+  const node = nodes.value.find((n) => {
+    const normalizedNodeLabel = n.label.toLowerCase().trim()
+    const normalizedSearchName = nodeName.toLowerCase().trim()
+    if (normalizedNodeLabel === normalizedSearchName) return true
+
+    // Also handle punctuation differences
+    if (
+      normalizedNodeLabel.replace(/[^a-z0-9]/gi, '') ===
+      normalizedSearchName.replace(/[^a-z0-9]/gi, '')
+    ) {
+      return true
+    }
+    return false
+  })
+
+  if (node) {
+    selectedNode.value = node
+    highlightNode(node.id)
+    openDetailPanel(node)
+    zoomToNode(node)
+  }
+}
+
 function drawLinkLabels() {
   d3.select(linkLabelsRef.value)
     .selectAll('text.link-label')
