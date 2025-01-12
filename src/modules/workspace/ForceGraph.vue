@@ -1605,7 +1605,7 @@ function resetView() {
 }
 
 .panel-inactive {
-  opacity: 0.8;
+  opacity: 0.4;
 }
 
 .panel-animating {
