@@ -1464,12 +1464,12 @@ function toggleExpandPanel(panel, options = {}) {
 
 function resetView() {
   if (!svgRef.value || !zoomBehavior) return
-  
+
   d3.select(svgRef.value)
     .transition()
     .duration(750)
     .call(zoomBehavior.transform, d3.zoomIdentity)
-    
+
   // Save the reset state
   const currentState = subjectsStore.graphState || {}
   subjectsStore.saveGraphState({
@@ -1486,9 +1486,9 @@ function startPanelDrag(event, panel) {
   isDragging.value = true
   dragOffset.value = {
     x: event.clientX - panel.pos.x,
-    y: event.clientY - panel.pos.y
+    y: event.clientY - panel.pos.y,
   }
-  
+
   // Add event listeners for drag and drop
   window.addEventListener('mousemove', handlePanelDrag)
   window.addEventListener('mouseup', stopPanelDrag)
@@ -1496,17 +1496,17 @@ function startPanelDrag(event, panel) {
 
 function handlePanelDrag(event) {
   if (!isDragging.value) return
-  
+
   const panel = openPanels.value[openPanels.value.length - 1]
   if (!panel) return
-  
+
   // Calculate new position
   const x = event.clientX - dragOffset.value.x
   const y = event.clientY - dragOffset.value.y
-  
+
   // Update panel position
   panel.pos = { x, y }
-  
+
   // Save the updated state
   saveCurrentGraphState()
 }
