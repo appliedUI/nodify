@@ -810,20 +810,24 @@ function recalculatePanelPositions() {
 }
 
 function closePanel(panelId) {
-  openPanels.value = openPanels.value.filter((panel) => panel.id !== panelId)
-  recalculatePanelPositions()
+  const panel = openPanels.value.find((p) => p.id === panelId)
+  if (!panel) return
+  panel.isRepositioning = true
+  setTimeout(() => {
+    openPanels.value = openPanels.value.filter((p) => p.id !== panelId)
+    recalculatePanelPositions()
+    // Save updated panels to graphState
+    const currentState = subjectsStore.graphState || {}
+    const updatedState = {
+      ...currentState,
+      openPanels: openPanels.value.map((p) => ({
+        id: p.id,
+        pos: p.pos,
+      })),
+    }
 
-  // Save updated panels to graphState
-  const currentState = subjectsStore.graphState || {}
-  const updatedState = {
-    ...currentState,
-    openPanels: openPanels.value.map((p) => ({
-      id: p.id,
-      pos: p.pos,
-    })),
-  }
-
-  subjectsStore.saveGraphState(updatedState)
+    subjectsStore.saveGraphState(updatedState)
+  }, 300)
 }
 
 /* Force-based Dragging */
@@ -1562,5 +1566,9 @@ function handlePanelClick(data) {
   opacity: 1;
   visibility: visible;
   z-index: 999;
+}
+
+.panel-animating {
+  transition: transform 0.3s;
 }
 </style>
