@@ -1,6 +1,6 @@
 <template>
   <div class="force-graph-container">
-    <SimulationProgress
+    <!-- <SimulationProgress
       :show="graphForceStore.graphLoading"
       :progress="graphForceStore.openaiProgress"
       progress-type="graph"
@@ -18,9 +18,9 @@
       :progress="100"
       saving-indicator
       :is-complete="false"
-    />
+    /> -->
     <div v-if="graphData" class="graph-wrapper">
-      <!-- <GraphProcessing /> -->
+      <GraphProcessing />
       <!-- Keep only this instance of SimulationProgress -->
 
       <!-- Loading Spinner -->
