@@ -19,8 +19,8 @@
       saving-indicator
       :is-complete="false"
     /> -->
+    <GraphProcessing />
     <div v-if="graphData" class="graph-wrapper">
-      <GraphProcessing />
       <!-- Keep only this instance of SimulationProgress -->
 
       <!-- Loading Spinner -->
