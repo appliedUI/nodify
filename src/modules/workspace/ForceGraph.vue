@@ -3,11 +3,21 @@
     <SimulationProgress
       :show="graphForceStore.graphLoading"
       :progress="graphForceStore.openaiProgress"
+      progress-type="graph"
+      :is-complete="graphForceStore.openaiProgress === 100"
+    />
+    <SimulationProgress
+      :show="!!pdfStore?.processingProgress"
+      :progress="pdfStore?.processingProgress?.percent || 0"
+      progress-type="pdf"
+      :custom-message="pdfStore?.processingProgress?.message"
+      :is-complete="pdfStore?.processingProgress?.isComplete || false"
     />
     <SimulationProgress
       :show="isSavingState"
       :progress="100"
       saving-indicator
+      :is-complete="false"
     />
     <div v-if="graphData" class="graph-wrapper">
       <!-- <GraphProcessing /> -->
@@ -394,6 +404,7 @@ import { ref, onMounted, watch, nextTick, onBeforeUnmount } from 'vue'
 import * as d3 from 'd3'
 import { useSubjectsStore } from '@/stores/subjectsStore'
 import { useGraphForceStore } from '@/stores/graphForceStore'
+import { usePDFStore } from '@/stores/pdfStore'
 import { storeToRefs } from 'pinia'
 import { db } from '@/db/db'
 import SimulationProgress from './components/SimulationProgress.vue'
@@ -444,6 +455,7 @@ onMounted(() => {
 
 const subjectsStore = useSubjectsStore()
 const graphForceStore = useGraphForceStore()
+const pdfStore = usePDFStore()
 const { graphLoading, openaiProgress } = storeToRefs(graphForceStore)
 const videoStore = useVideoStore()
 

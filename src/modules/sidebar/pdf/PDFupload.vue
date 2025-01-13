@@ -33,11 +33,15 @@
     <div class="flex mx-5">
       <button
         @click="processFile(file)"
-        :disabled="!file || processing"
+        :disabled="!file || processing || !subjectsStore.selectedSubjectId"
         class="btn btn-secondary btn-sm w-full"
       >
-        {{ processing ? 'Processing...' : 'Process PDF' }}
+        <span v-if="!subjectsStore.selectedSubjectId">Select a Subject First</span>
+        <span v-else>{{ processing ? 'Processing...' : 'Process PDF' }}</span>
       </button>
+    </div>
+    <div v-if="errorMessage" class="mt-2 mx-5 text-sm text-error">
+      {{ errorMessage }}
     </div>
 
     <!-- <div v-if="isLoading" class="mt-2 text-sm text-gray-500">
@@ -115,18 +119,18 @@ const processFile = async (fileToProcess) => {
     return
   }
 
+  if (!subjectsStore.selectedSubjectId) {
+    errorMessage.value = 'Please select a subject first'
+    return
+  }
+
   try {
     processing.value = true
     isLoading.value = true
     errorMessage.value = ''
 
-    const subjectId = subjectsStore.selectedSubjectId || selectedSubjectId.value
-    if (!subjectId) {
-      throw new Error('Please select a subject first')
-    }
-
-    console.log('[PDF Upload] Starting PDF processing for subject:', subjectId)
-    const markdown = await pdfStore.processPDF(fileToProcess, subjectId)
+    console.log('[PDF Upload] Starting PDF processing for subject:', subjectsStore.selectedSubjectId)
+    const markdown = await pdfStore.processPDF(fileToProcess, subjectsStore.selectedSubjectId)
 
     console.log('[PDF Upload] PDF processing completed')
     file.value = fileToProcess

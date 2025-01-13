@@ -17,6 +17,13 @@ export async function pdfToMarkdown(file, progressCallback) {
       disableAutoFetch: true,
     })
 
+    if (progressCallback) {
+      progressCallback({
+        percent: 10,
+        message: 'Loading PDF document',
+      })
+    }
+
     console.log('[PDF Processor] Loading PDF document')
     const pdf = await loadingTask.promise
     console.log(`[PDF Processor] Loaded document with ${pdf.numPages} pages`)
@@ -36,18 +43,25 @@ export async function pdfToMarkdown(file, progressCallback) {
       markdownContent += convertTextToMarkdown(pageText) + '\n\n'
 
       if (progressCallback) {
+        const percent = Math.round(((i / numPages) * 80) + 10) // Scale from 10-90%
         progressCallback({
-          percent: Math.round((i / numPages) * 100),
-          message: `Processing page ${i} of ${numPages}`,
+          percent,
+          message: numPages === 1 
+            ? 'Processing PDF content'
+            : `Processing page ${i} of ${numPages}`,
         })
       }
     }
 
+    if (progressCallback) {
+      progressCallback({
+        percent: 100,
+        message: 'Finalizing PDF processing',
+      })
+    }
+
     console.log('[PDF Processor] Completed processing')
-    console.log(
-      '[PDF Processor] Final markdown length:',
-      markdownContent.length
-    )
+    console.log('[PDF Processor] Final markdown length:', markdownContent.length)
     console.log('[PDF Processor] Final text length:', textContent.length)
 
     return {

@@ -46,12 +46,34 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  progressType: {
+    type: String,
+    default: 'graph', // 'graph', 'pdf', 'audio'
+  },
+  customMessage: {
+    type: String,
+    default: '',
+  },
+  isComplete: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const progressText = computed(() => {
   if (props.savingIndicator) return 'Saving...'
-  if (props.progress === 100) return 'Complete'
-  return `Generating graph... ${Math.round(props.progress)}%`
+  if (props.isComplete) return 'Complete'
+  if (props.customMessage) return props.customMessage
+
+  switch (props.progressType) {
+    case 'pdf':
+      return `Processing PDF... ${Math.round(props.progress)}%`
+    case 'audio':
+      return `Processing audio... ${Math.round(props.progress)}%`
+    case 'graph':
+    default:
+      return `Generating graph... ${Math.round(props.progress)}%`
+  }
 })
 </script>
 

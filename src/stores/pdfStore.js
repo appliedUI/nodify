@@ -2,6 +2,9 @@ import { defineStore } from 'pinia'
 import { useSubjectsStore } from './subjectsStore'
 import { db } from '@/db/db'
 import { pdfToMarkdown } from '@/utils/pdfProcessor'
+import { useGraphForceStore } from '@/stores/graphForceStore'
+
+const graphForceStore = useGraphForceStore()
 
 export const usePDFStore = defineStore('pdf', {
   state: () => ({
@@ -20,9 +23,22 @@ export const usePDFStore = defineStore('pdf', {
       console.log('[PDF Store] Starting PDF processing')
 
       try {
+        // Process PDF to markdown
         const markdown = await pdfToMarkdown(file, (progress) => {
-          this.processingProgress = progress
+          this.processingProgress = {
+            ...progress,
+            type: 'pdf',
+            isComplete: false
+          }
         })
+
+        // Update progress to show waiting for graph generation
+        this.processingProgress = {
+          percent: 100,
+          message: 'PDF processed, generating graph...',
+          type: 'pdf',
+          isComplete: false
+        }
 
         console.log('[PDF Store] PDF processing completed')
         this.markdownContent = markdown.markdown
@@ -30,6 +46,20 @@ export const usePDFStore = defineStore('pdf', {
 
         // Generate the graph
         const subjectsStore = useSubjectsStore()
+        
+        // Set up OpenAI progress listener
+        window.electronAPI.onOpenaiProgress((event, progress) => {
+          // Update PDF progress to show graph generation progress
+          this.processingProgress = {
+            percent: 100,
+            message: `Generating graph... ${Math.round(progress.progress * 100)}%`,
+            type: 'pdf',
+            isComplete: false
+          }
+          graphForceStore.updateProgress(progress)
+        })
+
+        graphForceStore.setGraphLoading(true)
         const graphData = await window.electronAPI.generateGraphWithOpenAI({
           apiKey: localStorage.getItem('openai_key'),
           transcript: markdown.text,
@@ -44,6 +74,14 @@ export const usePDFStore = defineStore('pdf', {
           markdownContent: markdown.markdown,
         })
 
+        // Final completion state
+        this.processingProgress = {
+          percent: 100,
+          message: 'Processing complete',
+          type: 'pdf',
+          isComplete: true
+        }
+
         console.log('[PDF Store] PDF saved to database:', savedPDF)
         return markdown.markdown
       } catch (error) {
@@ -51,8 +89,12 @@ export const usePDFStore = defineStore('pdf', {
         this.error = error
         throw error
       } finally {
-        this.isProcessing = false
-        this.currentFileId = null // Clear the current file ID after processing
+        // Only clear states after a delay to show completion
+        setTimeout(() => {
+          this.isProcessing = false
+          this.currentFileId = null
+          this.processingProgress = null
+        }, 1000)
       }
     },
 
