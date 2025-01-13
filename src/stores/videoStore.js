@@ -2,7 +2,9 @@ import { defineStore } from 'pinia'
 import { YoutubeTranscript } from 'youtube-transcript'
 import { useSubjectsStore } from './subjectsStore'
 import { db } from '@/db/db'
+import { useGraphForceStore } from '@/stores/graphForceStore'
 
+const graphForceStore = useGraphForceStore()
 export const useVideoStore = defineStore('video', {
   state: () => ({
     youtubeTranscript: null,
@@ -89,8 +91,9 @@ export const useVideoStore = defineStore('video', {
     async fetchTranscript(videoId, subjectId) {
       try {
         if (!videoId) throw new Error('Video ID is required')
-
+        
         this.updateProcessingProgress({ isComplete: false })
+       
         this.videoId = videoId
 
         const fullTranscript = await window.electronAPI.fetchYouTubeTranscript(
@@ -101,7 +104,13 @@ export const useVideoStore = defineStore('video', {
         if (subjectId) {
           const subjectsStore = useSubjectsStore()
           await subjectsStore.updateTranscript(subjectId, fullTranscript)
+          
+          // Set up OpenAI progress listener
+          window.electronAPI.onOpenaiProgress((event, progress) => {
+            graphForceStore.updateProgress(progress)
+          })
 
+          graphForceStore.setGraphLoading(true)
           const graphData = await window.electronAPI.generateGraphWithOpenAI({
             apiKey: localStorage.getItem('openai_key'),
             transcript: fullTranscript,

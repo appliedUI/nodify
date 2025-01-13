@@ -19,6 +19,20 @@ export const useGraphForceStore = defineStore('graphForce', {
     //setGraphLoading
     setGraphLoading(value) {
       this.graphLoading = value
+      if (!value) {
+        this.openaiProgress = 0
+      }
+    },
+    updateProgress(progress) {
+      if (progress.isComplete) {
+        this.openaiProgress = 100
+        setTimeout(() => {
+          this.graphLoading = false
+          this.openaiProgress = 0
+        }, 500)
+      } else {
+        this.openaiProgress = Math.round(progress.progress * 100)
+      }
     },
     async generateGraphWithOpenAI(transcript) {
       try {
@@ -27,22 +41,18 @@ export const useGraphForceStore = defineStore('graphForce', {
         this.openaiProgress = 0
         // clear any graph that is stored
         this.graph = { nodes: [], links: [] }
+
+        // Set up OpenAI progress listener
+        window.electronAPI.onOpenaiProgress((event, progress) => {
+          this.updateProgress(progress)
+        })
+
         const payload = {
           apiKey: localStorage.getItem('openai_key'),
           transcript: transcript,
         }
 
-        // Set up OpenAI progress listener
-        window.electronAPI.onOpenaiProgress((event, progress) => {
-          if (progress.isComplete) {
-            this.openaiProgress = 100
-          } else {
-            // Convert progress to percentage (0-100)
-            this.openaiProgress = Math.min(Math.round(progress.progress * 100), 99)
-          }
-        })
-
-        const graphData = await electronAPI.generateGraphWithOpenAI(payload)
+        const graphData = await window.electronAPI.generateGraphWithOpenAI(payload)
         //log
         console.log('Generated graph:', graphData)
         //set the graph data to the subject store
@@ -52,8 +62,6 @@ export const useGraphForceStore = defineStore('graphForce', {
         this.graph = graphData
         // Initialize force simulation
         this.initializeForceSimulation(graphData)
-        //load
-        this.graphLoading = false
       } catch (error) {
         console.error('Error generating graph:', error)
         this.graphLoading = false

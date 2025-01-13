@@ -75,8 +75,9 @@ const validate = ajv.compile(schema)
 async function generateJsonFromTranscript(apiKey, transcript, onProgress) {
   const openai = new OpenAI({ apiKey })
 
-  // Add progress callback to system prompt
-  const systemPrompt = `
+  try {
+    // Add progress callback to system prompt
+    const systemPrompt = `
 You are an expert at analyzing relationships and note taking in a professional setting. Your goal is to extract key concepts and build insightful connections between concepts while citing the orginal transcript below.
 Your task is to analyze the given transcript and identify key concepts and their relationships. Reuse the language from the transcript, but rephrase it into concise and actionable notes.
 
@@ -120,15 +121,22 @@ Guidelines:
 9. Use markdown .md formatting for the generalKnowledge field, and provide between 2-5 URL links for deeper research. Be as verbose and informative as possible in the generalKnowledge section using academic (do not start with the term 'general knowledge' in the title) wordsmithing about the transcript, adding further research, background context, and relevant details. use only h3 for the titles. This is the place to do it and put it in the right syntax for markdown.
 10. Build many nodes.  And more link relationships to show the complexity of the transcript. more the better.
 
-“Remember: Output must be valid JSON object. No additional text.”
-
+"Remember: Output must be valid JSON object. No additional text."
 
 Here is the transcript:
 
 ${transcript}
 `
 
-  try {
+    // Send initial progress update
+    if (onProgress) {
+      onProgress({
+        content: '',
+        progress: 0,
+        isComplete: false,
+      })
+    }
+
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
@@ -140,48 +148,64 @@ ${transcript}
       ],
       temperature: 0.5,
       max_tokens: 3000,
-      stream: true, // Enable streaming
+      stream: true,
     })
 
     let fullResponse = ''
+    let lastProgressUpdate = Date.now()
+    const progressUpdateInterval = 100 // Update progress every 100ms
+
     for await (const chunk of response) {
       const content = chunk.choices[0]?.delta?.content || ''
       fullResponse += content
 
-      // Send progress updates
-      if (onProgress) {
+      // Send progress updates at regular intervals
+      const now = Date.now()
+      if (now - lastProgressUpdate >= progressUpdateInterval && onProgress) {
         onProgress({
           content,
-          progress: fullResponse.length / 2000, // Estimate progress
+          progress: 0.5, // Show 50% progress during generation
           isComplete: false,
         })
+        lastProgressUpdate = now
       }
     }
 
-    // Final progress update
-    if (onProgress) {
-      onProgress({ isComplete: true })
+    // Parse and validate the JSON
+    try {
+      // Update progress to 75%
+      if (onProgress) {
+        onProgress({
+          content: fullResponse,
+          progress: 0.75,
+          isComplete: false,
+        })
+      }
+
+      // Parse the JSON
+      const jsonData = JSON.parse(fullResponse)
+
+      // Validate the JSON structure
+      const valid = validate(jsonData)
+      if (!valid) {
+        console.error('JSON validation errors:', validate.errors)
+        throw new Error('JSON structure validation failed.')
+      }
+
+      // Final progress update
+      if (onProgress) {
+        onProgress({
+          content: fullResponse,
+          progress: 1,
+          isComplete: true,
+        })
+      }
+
+      return jsonData
+    } catch (error) {
+      console.error('Error parsing or validating JSON:', error)
+      throw error
     }
-
-    // Extract assistant's reply
-    const assistantReply = fullResponse.trim()
-
-    // Ensure the response starts with '{' or '['
-    if (!assistantReply.startsWith('{') && !assistantReply.startsWith('[')) {
-      throw new Error('Response does not start with a JSON object or array.')
-    }
-
-    // Parse the JSON
-    const jsonData = JSON.parse(assistantReply)
-
-    // Validate the JSON structure
-    const valid = validate(jsonData)
-    if (!valid) {
-      console.error('JSON validation errors:', validate.errors)
-      throw new Error('JSON structure validation failed.')
-    }
-
-    return jsonData
   } catch (error) {
     console.error('Error in generateJsonFromTranscript:', error)
     throw error
