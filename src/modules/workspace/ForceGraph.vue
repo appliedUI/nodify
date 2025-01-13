@@ -1551,7 +1551,9 @@ function resetView() {
     .attr('stroke-width', COLORS.node.strokeWidth)
 
   // Reset zoom and center
-  const transform = d3.zoomIdentity.translate(WIDTH / 2, HEIGHT / 2).scale(1)
+  const transform = d3.zoomIdentity
+    .translate(WIDTH / 2 - 600, HEIGHT / 2 - 350)
+    .scale(1)
 
   // Apply transform with smooth transition
   d3.select(svgRef.value)
