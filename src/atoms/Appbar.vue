@@ -32,6 +32,22 @@
       </ul>
     </div>
   </div>
+
+  <div v-if="showExportModal" class="modal modal-open">
+    <div class="modal-box">
+      <h3 class="font-bold text-lg">Export Options</h3>
+      <p class="py-4">
+        Would you like to export just this subject or the entire workspace?
+      </p>
+      <div class="modal-action">
+        <button class="btn" @click="exportSubject">Export Subject</button>
+        <button class="btn" @click="exportWorkspace">Export Workspace</button>
+        <button class="btn btn-secondary" @click="showExportModal = false">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -47,6 +63,7 @@ import profile from '@/assets/img/icon-profile.svg'
 import { useRouter } from 'vue-router'
 import { useSubjectsStore } from '../stores/subjectsStore'
 import { exportSubjectData, importSubjectData } from '../utils/subjectExporter'
+import { exportWorkspaceData } from '@/utils/workspaceExporter'
 import {
   UserCircleIcon,
   CommandLineIcon,
@@ -76,6 +93,8 @@ const localUserName = ref('')
 // Add window type check
 const electronAPI = window.electronAPI
 
+const showExportModal = ref(false)
+
 const menuItems = [
   {
     label: 'New Workspace', // New Home item
@@ -104,35 +123,10 @@ const menuItems = [
     },
   },
   {
-    label: 'Save & Export',
+    label: 'Export',
     icon: ArrowUpCircleIcon,
-    action: async () => {
-      try {
-        const workspaceId = localStorage.getItem('workspaceUUID')
-        const selectedSubjectId = parseInt(
-          localStorage.getItem('selectedSubjectId')
-        )
-
-        if (!workspaceId || !selectedSubjectId) {
-          toast.error('Please select a subject to export')
-          return
-        }
-
-        const data = await exportSubjectData(
-          parseInt(workspaceId),
-          selectedSubjectId
-        )
-        const result = await electronAPI.exportSubjectToFile(data)
-
-        if (result.success) {
-          toast.success('Subject exported successfully')
-        } else {
-          toast.error('Failed to export subject')
-        }
-      } catch (error) {
-        console.error('Error exporting subject:', error)
-        toast.error('Failed to export subject')
-      }
+    action: () => {
+      showExportModal.value = true
       isDropdownVisible.value = false
     },
   },
@@ -280,6 +274,37 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   eventBus.off('workspace-switched', handleWorkspaceSwitch)
 })
+
+function exportSubject() {
+  // Existing subject export logic
+  // Example from your “Save & Export” code:
+  // ...existing code to prepare subject data...
+  electronAPI.exportSubjectToFile(data).then((result) => {
+    // ...existing code...
+  })
+  showExportModal.value = false
+}
+
+async function exportWorkspace() {
+  try {
+    const workspaceId = parseInt(localStorage.getItem('workspaceUUID'))
+    if (!workspaceId) {
+      toast.error('No workspace selected')
+      return
+    }
+    const data = await exportWorkspaceData(workspaceId)
+    const result = await electronAPI.exportWorkspace(data)
+    if (result.success) {
+      toast.success('Workspace exported successfully')
+    } else {
+      toast.error('Failed to export workspace')
+    }
+  } catch (error) {
+    console.error('Error exporting workspace:', error)
+    toast.error('Failed to export workspace')
+  }
+  showExportModal.value = false
+}
 </script>
 
 <style scoped>

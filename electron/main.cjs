@@ -729,6 +729,27 @@ const setupIpcHandlers = () => {
       })
     }
   })
+
+  ipcMain.handle('export-workspace', async (event, data) => {
+    const { dialog } = require('electron')
+    const fs = require('fs').promises
+  
+    try {
+      const { filePath } = await dialog.showSaveDialog({
+        title: 'Export Workspace Data',
+        defaultPath: `workspace-${data.metadata.workspace.name}.node`,
+        filters: [{ name: 'Workspace File', extensions: ['node'] }],
+      })
+  
+      if (!filePath) return { cancelled: true }
+  
+      await fs.writeFile(filePath, JSON.stringify(data, null, 2))
+      return { success: true, filePath }
+    } catch (error) {
+      console.error('Failed to export workspace:', error)
+      return { success: false, error: error.message }
+    }
+  })
 }
 
 // ========================

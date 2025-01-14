@@ -299,6 +299,22 @@ class AppDatabase extends Dexie {
       throw error
     }
   }
+
+  async getWorkspaceData(workspaceId) {
+    const workspace = await this.workspaces.get(workspaceId)
+    const subjects = await this.subjects.where('workspaceId').equals(workspaceId).toArray()
+    const notes = await this.notes.where('workspaceId').equals(workspaceId).toArray()
+    const workspaceUsers = await this.workspaceUsers.where('workspaceId').equals(workspaceId).toArray()
+    // ...existing code if needed for PDFs or other models...
+
+    return {
+      workspace,
+      subjects,
+      notes,
+      workspaceUsers,
+      // ...existing code...
+    }
+  }
 }
 
 export const db = new AppDatabase()
