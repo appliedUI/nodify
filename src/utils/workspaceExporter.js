@@ -43,10 +43,15 @@ export async function exportWorkspaceData(workspaceId) {
 export async function importWorkspaceData(jsonData) {
   try {
     const { workspace, subjects } = jsonData
+    const userId = parseInt(localStorage.getItem('userUUID'))
 
     // Validate the data
     if (!workspace || !workspace.name || !Array.isArray(subjects)) {
       throw new Error('Invalid workspace data format')
+    }
+    
+    if (!userId) {
+      throw new Error('No user ID found')
     }
 
     // Create new workspace
@@ -58,10 +63,18 @@ export async function importWorkspaceData(jsonData) {
     // Start a transaction to ensure all data is imported atomically
     const workspaceId = await db.transaction(
       'rw',
-      [db.workspaces, db.subjects, db.notes, db.pdfs],
+      [db.workspaces, db.workspaceUsers, db.subjects, db.notes, db.pdfs],
       async () => {
         // Add the workspace first
         const newWorkspaceId = await db.workspaces.add(newWorkspace)
+
+        // Create workspace-user relationship
+        await db.workspaceUsers.add({
+          userId: userId,
+          workspaceId: newWorkspaceId,
+          role: 'owner',
+          joinedAt: new Date()
+        })
 
         // Import each subject
         await Promise.all(

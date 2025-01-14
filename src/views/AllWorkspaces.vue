@@ -364,11 +364,14 @@ onMounted(async () => {
   await db.open() // Ensure database is open
   await fetchWorkspaces()
   console.log('Current workspace UUID:', currentWorkspaceUUID.value)
-  eventBus.on('workspace-updated', handleWorkspaceUpdate)
+
+  // Add listener for workspace updates
+  window.addEventListener('workspace-updated', fetchWorkspaces)
 })
 
 onUnmounted(() => {
-  eventBus.off('workspace-updated', handleWorkspaceUpdate)
+  // Remove listener when component is destroyed
+  window.removeEventListener('workspace-updated', fetchWorkspaces)
 })
 </script>
 

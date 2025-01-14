@@ -154,6 +154,9 @@ const menuItems = [
         // Store the new workspace ID in localStorage
         localStorage.setItem('workspaceUUID', workspaceId)
         
+        // Emit workspace update event
+        window.dispatchEvent(new CustomEvent('workspace-updated'))
+        
         // Show success message
         handleShowToast({
           message: 'Workspace imported successfully!',
