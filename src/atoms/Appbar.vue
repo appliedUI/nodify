@@ -32,6 +32,26 @@
       </ul>
     </div>
   </div>
+
+  <!-- Add Export Choice Modal -->
+  <dialog id="export_modal" class="modal modal-bottom sm:modal-middle">
+    <form method="dialog" class="modal-box">
+      <h3 class="font-bold text-lg mb-4">Choose Export Type</h3>
+      <div class="flex flex-col gap-4">
+        <button class="btn btn-outline" @click="exportSubject">
+          <ArrowUpCircleIcon class="h-5 w-5 mr-2" />
+          Export Current Subject
+        </button>
+        <button class="btn btn-outline" @click="exportWorkspace">
+          <ArrowUpCircleIcon class="h-5 w-5 mr-2" />
+          Export Entire Workspace
+        </button>
+      </div>
+    </form>
+    <form method="dialog" class="modal-backdrop">
+      <button>close</button>
+    </form>
+  </dialog>
 </template>
 
 <script setup>
@@ -47,6 +67,10 @@ import profile from '@/assets/img/icon-profile.svg'
 import { useRouter } from 'vue-router'
 import { useSubjectsStore } from '../stores/subjectsStore'
 import { exportSubjectData, importSubjectData } from '../utils/subjectExporter'
+import {
+  exportWorkspaceData,
+  importWorkspaceData,
+} from '../utils/workspaceExporter'
 import {
   UserCircleIcon,
   CommandLineIcon,
@@ -76,6 +100,7 @@ const localUserName = ref('')
 // Add window type check
 const electronAPI = window.electronAPI
 
+// Replace the existing 'Save & Export' menu item with this:
 const menuItems = [
   {
     label: 'New Workspace', // New Home item
@@ -106,33 +131,8 @@ const menuItems = [
   {
     label: 'Save & Export',
     icon: ArrowUpCircleIcon,
-    action: async () => {
-      try {
-        const workspaceId = localStorage.getItem('workspaceUUID')
-        const selectedSubjectId = parseInt(
-          localStorage.getItem('selectedSubjectId')
-        )
-
-        if (!workspaceId || !selectedSubjectId) {
-          toast.error('Please select a subject to export')
-          return
-        }
-
-        const data = await exportSubjectData(
-          parseInt(workspaceId),
-          selectedSubjectId
-        )
-        const result = await electronAPI.exportSubjectToFile(data)
-
-        if (result.success) {
-          toast.success('Subject exported successfully')
-        } else {
-          toast.error('Failed to export subject')
-        }
-      } catch (error) {
-        console.error('Error exporting subject:', error)
-        toast.error('Failed to export subject')
-      }
+    action: () => {
+      document.getElementById('export_modal').showModal()
       isDropdownVisible.value = false
     },
   },
@@ -141,28 +141,73 @@ const menuItems = [
     icon: ArrowDownCircleIcon,
     action: async () => {
       try {
-        const workspaceId = localStorage.getItem('workspaceUUID')
-        if (!workspaceId) {
-          toast.error('Please select a workspace first')
-          return
-        }
+        // First ask user to select import type
+        const importChoice = await new Promise((resolve) => {
+          const modal = document.createElement('dialog')
+          modal.className = 'modal modal-bottom sm:modal-middle'
+          modal.innerHTML = `
+            <form method="dialog" class="modal-box">
+              <h3 class="font-bold text-lg mb-4">Choose Import Type</h3>
+              <div class="flex flex-col gap-4">
+                <button class="btn btn-outline" value="subject">
+                  <ArrowDownCircleIcon class="h-5 w-5 mr-2" />
+                  Import Subject
+                </button>
+                <button class="btn btn-outline" value="workspace">
+                  <ArrowDownCircleIcon class="h-5 w-5 mr-2" />
+                  Import Workspace
+                </button>
+              </div>
+            </form>
+            <form method="dialog" class="modal-backdrop">
+              <button>close</button>
+            </form>
+          `
+          modal.addEventListener('close', () => {
+            resolve(modal.returnValue)
+            modal.remove()
+          })
+          document.body.appendChild(modal)
+          modal.showModal()
+        })
 
-        const result = await electronAPI.importSubjectFromFile()
-        if (result.success) {
-          const subjectId = await importSubjectData(
-            parseInt(workspaceId),
-            result.data
-          )
-          if (subjectId) {
-            toast.success('Subject imported successfully')
-            await subjectsStore.fetchSubjects()
+        if (!importChoice) return // User cancelled
+
+        if (importChoice === 'subject') {
+          const workspaceId = localStorage.getItem('workspaceUUID')
+          if (!workspaceId) {
+            toast.error('Please select a workspace first')
+            return
           }
-        } else {
-          toast.error('Failed to import subject')
+
+          const result = await electronAPI.importSubjectFromFile()
+          if (result.success) {
+            const subjectId = await importSubjectData(
+              parseInt(workspaceId),
+              result.data
+            )
+            if (subjectId) {
+              toast.success('Subject imported successfully')
+              await subjectsStore.fetchSubjects()
+            }
+          } else {
+            toast.error('Failed to import subject')
+          }
+        } else if (importChoice === 'workspace') {
+          const result = await electronAPI.importWorkspaceFromFile()
+          if (result.success) {
+            const workspaceId = await importWorkspaceData(result.data)
+            if (workspaceId) {
+              toast.success('Workspace imported successfully')
+              router.push('/workspaces')
+            }
+          } else {
+            toast.error('Failed to import workspace')
+          }
         }
       } catch (error) {
-        console.error('Error importing subject:', error)
-        toast.error('Failed to import subject')
+        console.error('Error importing:', error)
+        toast.error('Import failed')
       }
       isDropdownVisible.value = false
     },
@@ -175,14 +220,6 @@ const menuItems = [
       isDropdownVisible.value = false
     },
   },
-  // {
-  //   label: 'Mobile Connection',
-  //   icon: DevicePhoneMobileIcon,
-  //   action: () => {
-  //     console.log('Profile clicked')
-  //     isDropdownVisible.value = false
-  //   },
-  // },
   {
     label: 'Quit', // New Quit item
     icon: PowerIcon,
@@ -192,6 +229,58 @@ const menuItems = [
     },
   },
 ]
+
+// Add new export methods
+const exportSubject = async () => {
+  try {
+    const workspaceId = localStorage.getItem('workspaceUUID')
+    const selectedSubjectId = parseInt(
+      localStorage.getItem('selectedSubjectId')
+    )
+
+    if (!workspaceId || !selectedSubjectId) {
+      toast.error('Please select a subject to export')
+      return
+    }
+
+    const data = await exportSubjectData(
+      parseInt(workspaceId),
+      selectedSubjectId
+    )
+    const result = await electronAPI.exportSubjectToFile(data)
+
+    if (result.success) {
+      toast.success('Subject exported successfully')
+    } else {
+      toast.error('Failed to export subject')
+    }
+  } catch (error) {
+    console.error('Error exporting subject:', error)
+    toast.error('Failed to export subject')
+  }
+}
+
+const exportWorkspace = async () => {
+  try {
+    const workspaceId = localStorage.getItem('workspaceUUID')
+    if (!workspaceId) {
+      toast.error('No workspace selected')
+      return
+    }
+
+    const data = await exportWorkspaceData(parseInt(workspaceId))
+    const result = await electronAPI.exportWorkspaceToFile(data)
+
+    if (result.success) {
+      toast.success('Workspace exported successfully')
+    } else {
+      toast.error('Failed to export workspace')
+    }
+  } catch (error) {
+    console.error('Error exporting workspace:', error)
+    toast.error('Failed to export workspace')
+  }
+}
 
 function toggleDropdown() {
   isDropdownVisible.value = !isDropdownVisible.value

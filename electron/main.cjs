@@ -729,6 +729,50 @@ const setupIpcHandlers = () => {
       })
     }
   })
+
+  // Add these handlers in the setupIpcHandlers function, near the other export/import handlers
+  ipcMain.handle('export-workspace-to-file', async (event, workspaceData) => {
+    try {
+      const { filePath } = await dialog.showSaveDialog({
+        title: 'Export Workspace',
+        defaultPath: `workspace-${Date.now()}.workspace.json`,
+        filters: [
+          { name: 'Workspace Files', extensions: ['workspace.json'] },
+          { name: 'All Files', extensions: ['*'] }
+        ]
+      })
+
+      if (!filePath) return { success: false }
+
+      await fs.writeFile(filePath, JSON.stringify(workspaceData, null, 2))
+      return { success: true }
+    } catch (error) {
+      console.error('Error exporting workspace:', error)
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('import-workspace-from-file', async () => {
+    try {
+      const { filePaths } = await dialog.showOpenDialog({
+        title: 'Import Workspace',
+        filters: [
+          { name: 'Workspace Files', extensions: ['workspace.json'] },
+          { name: 'All Files', extensions: ['*'] }
+        ],
+        properties: ['openFile']
+      })
+
+      if (!filePaths || filePaths.length === 0) return { success: false }
+
+      const fileContent = await fs.readFile(filePaths[0], 'utf8')
+      const workspaceData = JSON.parse(fileContent)
+      return { success: true, data: workspaceData }
+    } catch (error) {
+      console.error('Error importing workspace:', error)
+      return { success: false, error: error.message }
+    }
+  })
 }
 
 // ========================

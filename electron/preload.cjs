@@ -76,6 +76,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       transcript,
       subjectId,
     }),
+  exportWorkspaceToFile: (data) => ipcRenderer.invoke('export-workspace-to-file', data),
+  importWorkspaceFromFile: () => ipcRenderer.invoke('import-workspace-from-file'),
 
   // ======================
   // Note Management
