@@ -163,8 +163,8 @@ const menuItems = [
           type: 'success'
         })
 
-        // Navigate to the workspace view
-        router.push('/workspace')
+        // Navigate to the workspaces list
+        router.push('/workspaces')
       } catch (error) {
         console.error('Error importing workspace:', error)
         handleShowToast({
