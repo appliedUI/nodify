@@ -139,77 +139,36 @@ const menuItems = [
   {
     label: 'Import',
     icon: ArrowDownCircleIcon,
-    action: async () => {
+    async action() {
       try {
-        // First ask user to select import type
-        const importChoice = await new Promise((resolve) => {
-          const modal = document.createElement('dialog')
-          modal.className = 'modal modal-bottom sm:modal-middle'
-          modal.innerHTML = `
-            <form method="dialog" class="modal-box">
-              <h3 class="font-bold text-lg mb-4">Choose Import Type</h3>
-              <div class="flex flex-col gap-4">
-                <button class="btn btn-outline" value="subject">
-                  <ArrowDownCircleIcon class="h-5 w-5 mr-2" />
-                  Import Subject
-                </button>
-                <button class="btn btn-outline" value="workspace">
-                  <ArrowDownCircleIcon class="h-5 w-5 mr-2" />
-                  Import Workspace
-                </button>
-              </div>
-            </form>
-            <form method="dialog" class="modal-backdrop">
-              <button>close</button>
-            </form>
-          `
-          modal.addEventListener('close', () => {
-            resolve(modal.returnValue)
-            modal.remove()
-          })
-          document.body.appendChild(modal)
-          modal.showModal()
+        const result = await window.electronAPI.importWorkspaceFromFile()
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Import failed')
+        }
+
+        // Import the workspace data using the workspaceExporter utility
+        const { importWorkspaceData } = await import('../utils/workspaceExporter')
+        const workspaceId = await importWorkspaceData(result.data)
+        
+        // Store the new workspace ID in localStorage
+        localStorage.setItem('workspaceUUID', workspaceId)
+        
+        // Show success message
+        handleShowToast({
+          message: 'Workspace imported successfully!',
+          type: 'success'
         })
 
-        if (!importChoice) return // User cancelled
-
-        if (importChoice === 'subject') {
-          const workspaceId = localStorage.getItem('workspaceUUID')
-          if (!workspaceId) {
-            toast.error('Please select a workspace first')
-            return
-          }
-
-          const result = await electronAPI.importSubjectFromFile()
-          if (result.success) {
-            const subjectId = await importSubjectData(
-              parseInt(workspaceId),
-              result.data
-            )
-            if (subjectId) {
-              toast.success('Subject imported successfully')
-              await subjectsStore.fetchSubjects()
-            }
-          } else {
-            toast.error('Failed to import subject')
-          }
-        } else if (importChoice === 'workspace') {
-          const result = await electronAPI.importWorkspaceFromFile()
-          if (result.success) {
-            const workspaceId = await importWorkspaceData(result.data)
-            if (workspaceId) {
-              toast.success('Workspace imported successfully')
-              router.push('/workspaces')
-            }
-          } else {
-            toast.error('Failed to import workspace')
-          }
-        }
+        // Navigate to the workspace view
+        router.push('/workspace')
       } catch (error) {
-        console.error('Error importing:', error)
-        toast.error('Import failed')
+        console.error('Error importing workspace:', error)
+        handleShowToast({
+          message: error.message || 'Failed to import workspace',
+          type: 'error'
+        })
       }
-      isDropdownVisible.value = false
     },
   },
   {

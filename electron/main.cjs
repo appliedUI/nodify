@@ -754,20 +754,20 @@ const setupIpcHandlers = () => {
 
   ipcMain.handle('import-workspace-from-file', async () => {
     try {
-      const { filePaths } = await dialog.showOpenDialog({
-        title: 'Import Workspace',
-        filters: [
-          { name: 'Workspace Files', extensions: ['workspace.json'] },
-          { name: 'All Files', extensions: ['*'] }
-        ],
-        properties: ['openFile']
+      const { canceled, filePaths } = await dialog.showOpenDialog({
+        properties: ['openFile'],
+        filters: [{ name: 'JSON', extensions: ['json'] }],
       })
 
-      if (!filePaths || filePaths.length === 0) return { success: false }
+      if (canceled || !filePaths[0]) {
+        return { success: false, error: 'No file selected' }
+      }
 
       const fileContent = await fs.readFile(filePaths[0], 'utf8')
-      const workspaceData = JSON.parse(fileContent)
-      return { success: true, data: workspaceData }
+      const jsonData = JSON.parse(fileContent)
+      
+      // Send the data to the renderer for processing
+      return { success: true, data: jsonData }
     } catch (error) {
       console.error('Error importing workspace:', error)
       return { success: false, error: error.message }
