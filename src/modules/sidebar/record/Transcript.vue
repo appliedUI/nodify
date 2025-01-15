@@ -27,7 +27,7 @@
                 >Generating...
               </span>
               <div
-                v-if="subjectsStore.currentSubject?.youtubeUrl"
+                v-if="hasVideo"
                 class="tooltip"
                 data-tip="Show YouTube Video"
               >
@@ -215,6 +215,23 @@ const hasGeneratedMarkdown = computed(() => {
   )
   return !!generated[subjectId]
 })
+
+// Add this computed property
+const hasVideo = computed(() => {
+  return !!subjectsStore.currentSubject?.youtubeUrl || !!videoStore.videoUrl
+})
+
+// Add this watcher
+watch(
+  () => videoStore.videoUrl,
+  (newUrl) => {
+    if (newUrl) {
+      // Update the subject with the new video URL
+      subjectsStore.currentSubject.youtubeUrl = newUrl
+    }
+  },
+  { immediate: true }
+)
 
 onMounted(async () => {
   // Explicitly hide panel on mount

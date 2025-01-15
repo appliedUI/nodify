@@ -3,8 +3,10 @@
     <textarea
       v-model="youtubeUrl"
       @input="handleUrlInput"
+      @dragover.prevent
+      @drop="handleDrop"
       class="textarea textarea-bordered h-14 bg-base-200 text-xs"
-      placeholder="Paste YouTube URL here"
+      placeholder="Paste or drop YouTube URL here"
       wrap="soft"
       :disabled="!isSubjectSelected"
     ></textarea>
@@ -109,6 +111,15 @@ const handleUrlInput = () => {
   const id = extractVideoId()
   if (id) {
     videoStore.$patch({ videoId: id })
+  }
+}
+
+const handleDrop = (event) => {
+  event.preventDefault()
+  const text = event.dataTransfer.getData('text/plain')
+  if ((text && text.includes('youtube.com')) || text.includes('youtu.be')) {
+    youtubeUrl.value = text.trim()
+    handleUrlInput() // Trigger the input handler to process the URL
   }
 }
 </script>

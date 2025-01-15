@@ -30,10 +30,13 @@ export const useVideoStore = defineStore('video', {
       console.log('setVideoUrl called:', { subjectId, url })
       this.videoUrl = url
       this.isVideoSubject = !!url
-      await db.subjects.update(subjectId, {
-        youtubeUrl: url,
-        markdownTranscript: this.youtubeTranscript,
-      })
+      // Update the subject immediately
+      const subject = await db.subjects.get(subjectId)
+      if (subject) {
+        subject.youtubeUrl = url
+        await db.subjects.put(subject)
+      }
+      return subject
     },
 
     //get the videoURL from the subjectID
@@ -91,9 +94,9 @@ export const useVideoStore = defineStore('video', {
     async fetchTranscript(videoId, subjectId) {
       try {
         if (!videoId) throw new Error('Video ID is required')
-        
+
         this.updateProcessingProgress({ isComplete: false })
-       
+
         this.videoId = videoId
 
         const fullTranscript = await window.electronAPI.fetchYouTubeTranscript(
@@ -104,7 +107,7 @@ export const useVideoStore = defineStore('video', {
         if (subjectId) {
           const subjectsStore = useSubjectsStore()
           await subjectsStore.updateTranscript(subjectId, fullTranscript)
-          
+
           // Set up OpenAI progress listener
           window.electronAPI.onOpenaiProgress((event, progress) => {
             graphForceStore.updateProgress(progress)
