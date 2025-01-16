@@ -40,12 +40,10 @@ const codeStore = useCodeStore();
 const { formattedNodeCode } = storeToRefs(codeStore);
 
 // Width configuration variables
-const MIN_CODE_WIDTH = 0.5; // Minimum width of code section (50% of window)
+const MIN_CODE_WIDTH = 0.2; // Minimum width of code section (50% of window)
 const MAX_CODE_WIDTH = 0.7; // Maximum width of code section (70% of window)
-const MIN_PARAMS_WIDTH = 0.15; // Minimum width of params section (15% of window)
-const MAX_PARAMS_WIDTH = 0.3; // Maximum width of params section (30% of window)
 const MIN_COMPILED_WIDTH = 0.15; // Minimum width of compiled section (15% of window)
-const MAX_COMPILED_WIDTH = 0.3; // Maximum width of compiled section (30% of window)
+const MAX_COMPILED_WIDTH = 1; // Maximum width of compiled section (30% of window)
 const INITIAL_CODE_WIDTH = 0.6; // Initial width of code section (60% of window)
 const INITIAL_PARAMS_WIDTH = 0.2; // Initial width of params section (20% of window)
 const INITIAL_COMPILED_WIDTH = 0.2; // Initial width of compiled section (20% of window)
