@@ -1,12 +1,17 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
 
-export const useCodeStore = defineStore("code", () => {
-  const asyncCode = ref("");
-
-  function updateCode(newCode) {
-    asyncCode.value = newCode;
-  }
-
-  return { asyncCode, updateCode };
+export const useCodeStore = defineStore("code", {
+  state: () => ({
+    asyncCode: "",
+  }),
+  actions: {
+    updateCode(newCode) {
+      this.asyncCode = newCode;
+    },
+  },
+  getters: {
+    formattedCode: (state) => {
+      return state.asyncCode.trim();
+    },
+  },
 });
