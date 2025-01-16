@@ -44,6 +44,8 @@ const nodeTypes = [
 const elements = ref([]);
 let id = 1;
 
+const vueFlowRef = ref(null);
+
 const onDragStart = (event, node) => {
   event.dataTransfer.setData("application/vueflow", node.type);
   event.dataTransfer.effectAllowed = "move";
