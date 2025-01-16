@@ -43,10 +43,26 @@ import { useCodeStore } from "@/stores/codeStore";
 const { onConnect, addEdges, project } = useVueFlow();
 
 const nodeTypes = [
-  { type: "input", label: "Input Node" },
-  { type: "output", label: "Output Node" },
-  { type: "operation", label: "Operation Node" },
-  { type: "condition", label: "Condition Node" },
+  {
+    type: "input",
+    label: "Input Node",
+    code: "const input = await getInput();",
+  },
+  {
+    type: "output",
+    label: "Output Node",
+    code: "return processResult(result);",
+  },
+  {
+    type: "operation",
+    label: "Operation Node",
+    code: "const result = await processData(data);",
+  },
+  {
+    type: "condition",
+    label: "Condition Node",
+    code: "if (condition) {\n  // do something\n}",
+  },
 ];
 
 const elements = ref([]);
@@ -69,6 +85,7 @@ const onDragOver = (event) => {
 const onDrop = (event) => {
   const type = event.dataTransfer.getData("application/vueflow");
   const position = project({ x: event.clientX, y: event.clientY });
+  const nodeType = nodeTypes.find((n) => n.type === type);
 
   const newNode = {
     id: `node-${id}`,
@@ -76,10 +93,14 @@ const onDrop = (event) => {
     label: `${type.charAt(0).toUpperCase() + type.slice(1)} Node ${id}`,
     position,
     draggable: true,
+    data: {
+      code: nodeType.code,
+    },
   };
 
   id++;
   elements.value = [...elements.value, newNode];
+  updateCodeFromNodes();
 };
 
 onConnect((params) => {
@@ -95,13 +116,17 @@ onConnect((params) => {
   addEdges([newEdge]);
 });
 
+const updateCodeFromNodes = () => {
+  const codeBlocks = elements.value
+    .filter((el) => el.type === "node")
+    .map((node) => node.data?.code || "")
+    .join("\n\n");
+
+  console.log("Sending node code to store:", codeBlocks);
+  codeStore.updateNodeCode(codeBlocks);
+};
+
 // Example of updating the code
-setTimeout(() => {
-  codeStore.updateCode(`async function example() {
-  const data = await fetchData();
-  return process(data);
-}`);
-}, 2000);
 </script>
 
 <style>

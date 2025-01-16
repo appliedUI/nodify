@@ -1,15 +1,21 @@
 <template>
   <div class="code-container">
-    <pre>{{ code }}</pre>
+    <h3>Generated Code:</h3>
+    <pre>{{ formattedNodeCode }}</pre>
   </div>
 </template>
 
 <script setup>
 import { useCodeStore } from "@/stores/codeStore";
 import { storeToRefs } from "pinia";
+import { watch } from "vue";
 
 const codeStore = useCodeStore();
-const { asyncCode: code } = storeToRefs(codeStore);
+const { formattedNodeCode } = storeToRefs(codeStore);
+
+watch(formattedNodeCode, (newCode) => {
+  console.log("Code component received:", newCode);
+});
 </script>
 
 <style scoped>
@@ -25,5 +31,9 @@ const { asyncCode: code } = storeToRefs(codeStore);
 pre {
   white-space: pre-wrap;
   word-wrap: break-word;
+  background: #fff;
+  padding: 1rem;
+  border-radius: 4px;
+  border: 1px solid #eee;
 }
 </style>

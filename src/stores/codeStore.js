@@ -2,16 +2,17 @@ import { defineStore } from "pinia";
 
 export const useCodeStore = defineStore("code", {
   state: () => ({
-    asyncCode: "",
+    nodeCode: "",
   }),
   actions: {
-    updateCode(newCode) {
-      this.asyncCode = newCode;
+    updateNodeCode(code) {
+      console.log("Received node code:", code);
+      this.nodeCode = code;
     },
   },
   getters: {
-    formattedCode: (state) => {
-      return state.asyncCode.trim();
+    formattedNodeCode: (state) => {
+      return state.nodeCode.trim();
     },
   },
 });
