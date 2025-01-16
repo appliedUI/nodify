@@ -87,6 +87,11 @@ const onDrop = (event) => {
   const position = project({ x: event.clientX, y: event.clientY });
   const nodeType = nodeTypes.find((n) => n.type === type);
 
+  if (!nodeType) {
+    console.warn("No node type found for:", type);
+    return;
+  }
+
   const newNode = {
     id: `node-${id}`,
     type,
@@ -94,10 +99,11 @@ const onDrop = (event) => {
     position,
     draggable: true,
     data: {
-      code: nodeType.code,
+      code: nodeType.code || "",
     },
   };
 
+  console.log("Adding new node with code:", newNode.data.code);
   id++;
   elements.value = [...elements.value, newNode];
   updateCodeFromNodes();
@@ -117,16 +123,19 @@ onConnect((params) => {
 });
 
 const updateCodeFromNodes = () => {
+  console.log("Current elements:", elements.value);
   const codeBlocks = elements.value
-    .filter((el) => el.type === "node")
-    .map((node) => node.data?.code || "")
+    .filter((el) => el.type !== undefined)
+    .map((node) => {
+      console.log("Processing node:", node.type, "code:", node.data?.code);
+      return node.data?.code || "";
+    })
+    .filter(code => code.trim() !== "")
     .join("\n\n");
 
-  console.log("Sending node code to store:", codeBlocks);
+  console.log("Final combined code:", codeBlocks);
   codeStore.updateNodeCode(codeBlocks);
 };
-
-// Example of updating the code
 </script>
 
 <style>
