@@ -1,15 +1,8 @@
 <template>
-  <div class="h-full dark:bg-gray-800">
-    <div
-      class="flex justify-between items-center p-4 border-b dark:border-gray-700"
-    >
-      <h2 class="text-sm font-semibold dark:text-gray-200">Code Output</h2>
-    </div>
-    <div class="p-4">
-      <pre class="rounded-lg bg-gray-900 p-4 overflow-x-auto">
+  <div class="p-0">
+    <pre class="rounded-lg bg-gray-900 p-4 overflow-x-auto">
         <code class="text-xs text-gray-100">{{ formattedNodeCode }}</code>
       </pre>
-    </div>
   </div>
 </template>
 

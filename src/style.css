@@ -16,6 +16,8 @@ body,
   font-size: 12px;
   text-align: center;
   border: 1px solid #1a192b;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .node-toolbox {
@@ -23,7 +25,6 @@ body,
   left: 10px;
   top: 10px;
   z-index: 4;
-  background: white;
   padding: 10px;
   border-radius: 5px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -35,7 +36,8 @@ body,
   border: 1px solid #1a192b;
   border-radius: 5px;
   cursor: move;
-  background: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4),
+    0 2px 4px -1px rgba(0, 0, 0, 0.3);
 }
 
 .vue-flow__node-input {

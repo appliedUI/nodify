@@ -15,7 +15,7 @@
       <div
         v-for="node in nodeTypes"
         :key="node.type"
-        class="draggable-node text-xs bg-gray-700 hover:bg-blue-300 text-gray-900 p-3 mb-2 rounded-md cursor-move transition-colors duration-200 shadow-sm"
+        class="draggable-node text-xs bg-gray-800 hover:bg-gray-900/50 text-gray-200 p-3 mb-2 rounded-md cursor-move transition-colors duration-200 shadow-sm"
         :draggable="true"
         @dragstart="(event) => onDragStart(event, node)"
       >
@@ -112,7 +112,7 @@ onConnect((params) => {
 const updateCodeFromNodes = () => {
   const codeBlocks = elements.value
     .filter((el) => el.type !== undefined)
-    .map((node) => node.data?.code || "")
+    .map((node) => node.data?.code?.trim() || "")
     .filter((code) => code.trim() !== "")
     .join("\n\n");
 
