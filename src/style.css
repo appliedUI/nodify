@@ -1,0 +1,49 @@
+html, body, #app {
+  margin: 0;
+  height: 100%;
+}
+
+.vue-flow__node {
+  padding: 10px;
+  border-radius: 5px;
+  min-width: 150px;
+  font-size: 12px;
+  text-align: center;
+  border: 1px solid #1a192b;
+}
+
+.node-toolbox {
+  position: fixed;
+  left: 10px;
+  top: 10px;
+  z-index: 4;
+  background: white;
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.draggable-node {
+  margin: 5px;
+  padding: 10px;
+  border: 1px solid #1a192b;
+  border-radius: 5px;
+  cursor: move;
+  background: white;
+}
+
+.vue-flow__node-input {
+  background: #f6e58d;
+}
+
+.vue-flow__node-output {
+  background: #badc58;
+}
+
+.vue-flow__node-operation {
+  background: #ff7979;
+}
+
+.vue-flow__node-condition {
+  background: #7ed6df;
+}
