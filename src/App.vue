@@ -1,28 +1,32 @@
 <template>
-  <div style="height: 100%">
-    <VueFlow
-      v-model="elements"
-      :default-viewport="{ zoom: 1.5 }"
-      @dragover="onDragOver"
-      @drop="onDrop"
-    >
-      <Background pattern-color="#aaa" :gap="8" />
-      <Controls />
+  <div class="app-container">
+    <div class="flow-container">
+      <VueFlow
+        v-model="elements"
+        :default-viewport="{ zoom: 1.5 }"
+        @dragover="onDragOver"
+        @drop="onDrop"
+      >
+        <Background pattern-color="#aaa" :gap="8" />
+        <Controls />
 
-      <div class="node-toolbox">
-        <div
-          v-for="node in nodeTypes"
-          :key="node.type"
-          class="draggable-node"
-          :draggable="true"
-          @dragstart="(event) => onDragStart(event, node)"
-        >
-          {{ node.label }}
+        <div class="node-toolbox">
+          <div
+            v-for="node in nodeTypes"
+            :key="node.type"
+            class="draggable-node"
+            :draggable="true"
+            @dragstart="(event) => onDragStart(event, node)"
+          >
+            {{ node.label }}
+          </div>
         </div>
-      </div>
-    </VueFlow>
+      </VueFlow>
+    </div>
 
-    <CodeComponent />
+    <div class="code-container">
+      <CodeComponent />
+    </div>
   </div>
 </template>
 
@@ -99,3 +103,23 @@ setTimeout(() => {
 }`);
 }, 2000);
 </script>
+
+<style>
+/* Add these styles */
+.app-container {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  height: 100vh;
+}
+
+.flow-container {
+  height: 100%;
+  position: relative;
+}
+
+.code-container {
+  border-top: 2px solid #ddd;
+  overflow: auto;
+  padding: 1rem;
+}
+</style>
