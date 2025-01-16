@@ -7,13 +7,15 @@
     class="dark"
   >
     <Background pattern-color="#4B5563" :gap="8" />
-    <Controls />
+    <Controls class="!bg-gray-800 !border-gray-700" />
 
-    <div class="node-toolbox">
+    <div
+      class="absolute top-4 left-4 z-10 bg-gray-800 p-4 rounded-lg border border-gray-700 shadow-lg"
+    >
       <div
         v-for="node in nodeTypes"
         :key="node.type"
-        class="draggable-node bg-gray-700 hover:bg-gray-600 p-2 mb-2 rounded cursor-move"
+        class="draggable-node text-xs bg-gray-700 hover:bg-blue-300 text-gray-900 p-3 mb-2 rounded-md cursor-move transition-colors duration-200 shadow-sm"
         :draggable="true"
         @dragstart="(event) => onDragStart(event, node)"
       >
@@ -117,3 +119,33 @@ const updateCodeFromNodes = () => {
   codeStore.updateNodeCode(codeBlocks);
 };
 </script>
+
+<style scoped>
+:deep(.vue-flow__node) {
+  @apply bg-gray-800 border-gray-600 text-gray-200 shadow-lg;
+}
+
+:deep(.vue-flow__handle) {
+  @apply bg-gray-600 border-gray-700;
+}
+
+:deep(.vue-flow__edge-path) {
+  stroke: #4b5563;
+}
+
+:deep(.vue-flow__controls button) {
+  @apply bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700;
+}
+
+:deep(.vue-flow__attribution) {
+  @apply bg-transparent text-gray-500;
+}
+
+.node-toolbox {
+  min-width: 200px;
+}
+
+.draggable-node {
+  user-select: none;
+}
+</style>

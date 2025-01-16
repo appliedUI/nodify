@@ -1,8 +1,15 @@
 <template>
-  <div class="code-container">
-    <h3>Generated Code:</h3>
-    <pre v-if="formattedNodeCode" class="code-block">{{ formattedNodeCode }}</pre>
-    <div v-else class="empty-state">No code generated yet. Drop nodes to generate code.</div>
+  <div class="h-full dark:bg-gray-800">
+    <div
+      class="flex justify-between items-center p-4 border-b dark:border-gray-700"
+    >
+      <h2 class="text-sm font-semibold dark:text-gray-200">Code Output</h2>
+    </div>
+    <div class="p-4">
+      <pre class="rounded-lg bg-gray-900 p-4 overflow-x-auto">
+        <code class="text-xs text-gray-100">{{ formattedNodeCode }}</code>
+      </pre>
+    </div>
   </div>
 </template>
 
@@ -18,38 +25,16 @@ onMounted(() => {
   console.log("CodeComponent mounted, current code:", formattedNodeCode.value);
 });
 
-watch(formattedNodeCode, (newCode) => {
-  console.log("Code updated in component:", newCode);
-});
+watch(
+  formattedNodeCode,
+  (newCode) => {
+    console.log("Code updated in component:", newCode);
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped>
-.code-container {
-  padding: 1rem;
-  background: #f5f5f5;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  max-width: 800px;
-  margin: 1rem auto;
-  min-height: 200px;
-}
-
-.code-block {
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  background: #fff;
-  padding: 1rem;
-  border-radius: 4px;
-  border: 1px solid #eee;
-  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
-}
-
-.empty-state {
-  color: #666;
-  text-align: center;
-  padding: 2rem;
-}
-
 pre {
   margin: 0;
   overflow-x: auto;
