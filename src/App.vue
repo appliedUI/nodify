@@ -1,10 +1,10 @@
 <template>
-  <div class="app-container">
-    <div class="flow-container">
+  <div class="app-container dark bg-gray-900 text-white">
+    <div class="flow-container bg-gray-800">
       <FlowEditor />
     </div>
-    <div class="resize-handle"></div>
-    <div class="code-container">
+    <div class="resize-handle bg-gray-700 hover:bg-gray-600"></div>
+    <div class="code-container bg-gray-800">
       <CodeComponent />
     </div>
   </div>
@@ -62,7 +62,6 @@ onMounted(() => {
 
 .resize-handle {
   cursor: row-resize;
-  background-color: #ddd;
   position: relative;
 }
 

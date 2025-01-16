@@ -4,15 +4,16 @@
     :default-viewport="{ zoom: 1.5 }"
     @dragover="onDragOver"
     @drop="onDrop"
+    class="dark"
   >
-    <Background pattern-color="#aaa" :gap="8" />
+    <Background pattern-color="#4B5563" :gap="8" />
     <Controls />
 
     <div class="node-toolbox">
       <div
         v-for="node in nodeTypes"
         :key="node.type"
-        class="draggable-node"
+        class="draggable-node bg-gray-700 hover:bg-gray-600 p-2 mb-2 rounded cursor-move"
         :draggable="true"
         @dragstart="(event) => onDragStart(event, node)"
       >
