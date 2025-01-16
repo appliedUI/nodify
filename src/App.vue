@@ -71,4 +71,17 @@ const onDrop = (event) => {
   id++;
   elements.value = [...elements.value, newNode];
 };
+
+onConnect((params) => {
+  const newEdge = {
+    id: `edge-${params.source}-${params.target}`,
+    source: params.source,
+    target: params.target,
+    animated: true,
+    style: { stroke: "#555", strokeWidth: 2 },
+  };
+
+  // Use addEdges to ensure reactivity
+  addEdges([newEdge]);
+});
 </script>
