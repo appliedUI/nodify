@@ -32,7 +32,7 @@ import { Controls } from "@vue-flow/controls";
 import "@vue-flow/core/dist/style.css";
 import "@vue-flow/core/dist/theme-default.css";
 
-const { project } = useVueFlow();
+const { onConnect, addEdges, project } = useVueFlow();
 
 const nodeTypes = [
   { type: "input", label: "Input Node" },
