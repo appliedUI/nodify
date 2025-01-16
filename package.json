@@ -78,9 +78,10 @@
     "wait-on": "^7.2.0"
   },
   "description": "An AI-powered note-taking and transcription app",
+  "homepage": "https://github.com/appliedUI/nodify",
   "author": {
-    "name": "Your Name",
-    "email": "your.email@example.com"
+    "name": "Dana",
+    "email": "dana@nodify.app"
   },
   "build": {
     "appId": "com.notifyapp.app",
@@ -117,7 +118,12 @@
       "vendor": "Your Company",
       "synopsis": "AI-powered note-taking and transcription app",
       "icon": "build/icons/icon.png",
-      "artifactName": "${productName}-${version}.${ext}"
+      "artifactName": "${productName}-${version}.${ext}",
+      "desktop": {
+        "Name": "Nodify",
+        "Comment": "AI-powered note-taking and transcription app",
+        "Categories": "Office;Development"
+      }
     },
     "files": [
       "dist/**/*",
