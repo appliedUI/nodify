@@ -8,18 +8,20 @@
   >
     <Background pattern-color="#4B5563" :gap="8" />
     <Controls class="!bg-gray-800 !border-gray-700" />
-
-    <div
-      class="absolute top-4 left-4 z-10 bg-gray-800 p-4 rounded-lg border border-gray-700 shadow-lg"
-    >
+    <div>
       <div
-        v-for="node in nodeTypes"
-        :key="node.type"
-        class="draggable-node text-xs bg-gray-800 hover:bg-gray-900/50 text-gray-200 p-3 mb-2 rounded-md cursor-move transition-colors duration-200 shadow-sm"
-        :draggable="true"
-        @dragstart="(event) => onDragStart(event, node)"
+        class="absolute top-4 left-4 z-10 bg-gray-800 p-4 rounded-lg border border-gray-700 shadow-lg"
+        style="max-height: calc(300px); overflow-y: auto"
       >
-        {{ node.label }}
+        <div
+          v-for="node in nodeTypes"
+          :key="node.type"
+          class="draggable-node text-xs bg-gray-800 hover:bg-gray-900/50 text-gray-200 p-3 mb-2 rounded-md cursor-move transition-colors duration-200 shadow-sm"
+          :draggable="true"
+          @dragstart="(event) => onDragStart(event, node)"
+        >
+          {{ node.label }}
+        </div>
       </div>
     </div>
   </VueFlow>
@@ -31,31 +33,9 @@ import { VueFlow, useVueFlow } from "@vue-flow/core";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
 import { useCodeStore } from "@/stores/codeStore";
+import nodeTypes from "@/nodeData/nodeTypes.json";
 
 const { onConnect, addEdges, project } = useVueFlow();
-
-const nodeTypes = [
-  {
-    type: "input",
-    label: "Input Node",
-    code: "const input = await getInput();",
-  },
-  {
-    type: "output",
-    label: "Output Node",
-    code: "return processResult(result);",
-  },
-  {
-    type: "operation",
-    label: "Operation Node",
-    code: "const result = await processData(data);",
-  },
-  {
-    type: "condition",
-    label: "Condition Node",
-    code: "if (condition) {\n  // do something\n}",
-  },
-];
 
 const elements = ref([]);
 let id = 1;

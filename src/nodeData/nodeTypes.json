@@ -1,0 +1,142 @@
+[
+  {
+    "type": "input",
+    "label": "Gather Node",
+    "code": "GATHER \"Prompt\" => variableName",
+    "category": "Input/Output",
+    "description": "Captures information from the user or an external source."
+  },
+  {
+    "type": "output",
+    "label": "Dispatch Node",
+    "code": "DISPATCH variableName",
+    "category": "Input/Output",
+    "description": "Sends or displays data to a destination (e.g., screen, console, event)."
+  },
+  {
+    "type": "operation",
+    "label": "Process Node",
+    "code": "PROCESS variableName => newVariableName",
+    "category": "Data",
+    "description": "Performs an action or transformation on the data, then outputs the result."
+  },
+  {
+    "type": "condition",
+    "label": "Decision Node",
+    "code": "IF ( condition ) THEN action1 ELSE action2",
+    "category": "Flow Control",
+    "description": "Evaluates a condition and branches execution into two possible paths."
+  },
+  {
+    "type": "loop",
+    "label": "Loop Node",
+    "code": "LOOP count => actionBlock",
+    "category": "Flow Control",
+    "description": "Executes the specified action block a fixed number of times."
+  },
+  {
+    "type": "while",
+    "label": "While Node",
+    "code": "WHILE ( condition ) => actionBlock",
+    "category": "Flow Control",
+    "description": "Continuously executes the action block as long as the condition is true."
+  },
+  {
+    "type": "forEach",
+    "label": "ForEach Node",
+    "code": "FOREACH item IN list => actionBlock",
+    "category": "Flow Control",
+    "description": "Iterates through a list (array, collection) and performs an action for each item."
+  },
+  {
+    "type": "event",
+    "label": "Event Node",
+    "code": "EVENT trigger => actionBlock",
+    "category": "Events",
+    "description": "Responds to a specified game or system event by executing the action block."
+  },
+  {
+    "type": "random",
+    "label": "Random Node",
+    "code": "RANDOM min max => variableName",
+    "category": "Data",
+    "description": "Generates a random number between the defined min and max, stored in a variable."
+  },
+  {
+    "type": "math",
+    "label": "Math Node",
+    "code": "MATH operation x y => result",
+    "category": "Data",
+    "description": "Performs basic arithmetic (add, subtract, multiply, etc.) on two values."
+  },
+  {
+    "type": "function",
+    "label": "Function Node",
+    "code": "FUNCTION functionName => { ... }",
+    "category": "Scripting",
+    "description": "Defines a reusable block of code under a specific name."
+  },
+  {
+    "type": "call",
+    "label": "Call Node",
+    "code": "CALL functionName => outputVariable",
+    "category": "Scripting",
+    "description": "Invokes a previously defined function and optionally captures its output."
+  },
+  {
+    "type": "wait",
+    "label": "Wait Node",
+    "code": "WAIT seconds => nextAction",
+    "category": "Flow Control",
+    "description": "Pauses execution for a specified duration before continuing."
+  },
+  {
+    "type": "switch",
+    "label": "Switch Node",
+    "code": "SWITCH variable => [case1 => action1, case2 => action2]",
+    "category": "Flow Control",
+    "description": "Evaluates a variable against multiple cases, executing the matching action block."
+  },
+  {
+    "type": "comment",
+    "label": "Comment Node",
+    "code": "COMMENT \"Your descriptive note here\"",
+    "category": "Utility",
+    "description": "Adds non-executable text within the script for clarity or notes."
+  },
+  {
+    "type": "debug",
+    "label": "Debug Node",
+    "code": "DEBUG variableName",
+    "category": "Utility",
+    "description": "Logs or inspects a variable’s value for troubleshooting."
+  },
+  {
+    "type": "variable",
+    "label": "Variable Node",
+    "code": "VARIABLE variableName => initialValue",
+    "category": "Data",
+    "description": "Declares a new variable with an optional initial value."
+  },
+  {
+    "type": "array",
+    "label": "Array Node",
+    "code": "ARRAY arrayName => [value1, value2, ...]",
+    "category": "Data",
+    "description": "Defines a simple list of values for iteration or storage."
+  },
+  {
+    "type": "dictionary",
+    "label": "Dictionary Node",
+    "code": "DICT dictName => { key1:value1, key2:value2, ... }",
+    "category": "Data",
+    "description": "Stores data as key-value pairs in a flexible structure."
+  },
+  {
+    "type": "animation",
+    "label": "Animation Node",
+    "code": "ANIMATE spriteName => animationState",
+    "category": "Graphics",
+    "description": "Controls sprite or character animation, transitioning to the specified state."
+  }
+]
