@@ -21,6 +21,8 @@
         </div>
       </div>
     </VueFlow>
+
+    <CodeComponent />
   </div>
 </template>
 
@@ -31,6 +33,8 @@ import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
 import "@vue-flow/core/dist/style.css";
 import "@vue-flow/core/dist/theme-default.css";
+import CodeComponent from "@/components/CodeComponent.vue";
+import { useCodeStore } from "@/stores/codeStore";
 
 const { onConnect, addEdges, project } = useVueFlow();
 
@@ -45,6 +49,8 @@ const elements = ref([]);
 let id = 1;
 
 const vueFlowRef = ref(null);
+
+const codeStore = useCodeStore();
 
 const onDragStart = (event, node) => {
   event.dataTransfer.setData("application/vueflow", node.type);
@@ -84,4 +90,12 @@ onConnect((params) => {
   // Use addEdges to ensure reactivity
   addEdges([newEdge]);
 });
+
+// Example of updating the code
+setTimeout(() => {
+  codeStore.updateCode(`async function example() {
+  const data = await fetchData();
+  return process(data);
+}`);
+}, 2000);
 </script>
