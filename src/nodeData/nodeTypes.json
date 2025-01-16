@@ -1,142 +1,162 @@
 [
   {
-    "type": "input",
-    "label": "Gather Node",
-    "code": "GATHER \"Prompt\" => variableName",
-    "category": "Input/Output",
-    "description": "Captures information from the user or an external source."
-  },
-  {
-    "type": "output",
-    "label": "Dispatch Node",
-    "code": "DISPATCH variableName",
-    "category": "Input/Output",
-    "description": "Sends or displays data to a destination (e.g., screen, console, event)."
-  },
-  {
-    "type": "operation",
-    "label": "Process Node",
-    "code": "PROCESS variableName => newVariableName",
-    "category": "Data",
-    "description": "Performs an action or transformation on the data, then outputs the result."
-  },
-  {
-    "type": "condition",
-    "label": "Decision Node",
-    "code": "IF ( condition ) THEN action1 ELSE action2",
-    "category": "Flow Control",
-    "description": "Evaluates a condition and branches execution into two possible paths."
-  },
-  {
-    "type": "loop",
-    "label": "Loop Node",
-    "code": "LOOP count => actionBlock",
-    "category": "Flow Control",
-    "description": "Executes the specified action block a fixed number of times."
-  },
-  {
-    "type": "while",
-    "label": "While Node",
-    "code": "WHILE ( condition ) => actionBlock",
-    "category": "Flow Control",
-    "description": "Continuously executes the action block as long as the condition is true."
-  },
-  {
-    "type": "forEach",
-    "label": "ForEach Node",
-    "code": "FOREACH item IN list => actionBlock",
-    "category": "Flow Control",
-    "description": "Iterates through a list (array, collection) and performs an action for each item."
-  },
-  {
-    "type": "event",
-    "label": "Event Node",
-    "code": "EVENT trigger => actionBlock",
-    "category": "Events",
-    "description": "Responds to a specified game or system event by executing the action block."
-  },
-  {
-    "type": "random",
-    "label": "Random Node",
-    "code": "RANDOM min max => variableName",
-    "category": "Data",
-    "description": "Generates a random number between the defined min and max, stored in a variable."
-  },
-  {
-    "type": "math",
-    "label": "Math Node",
-    "code": "MATH operation x y => result",
-    "category": "Data",
-    "description": "Performs basic arithmetic (add, subtract, multiply, etc.) on two values."
-  },
-  {
-    "type": "function",
-    "label": "Function Node",
-    "code": "FUNCTION functionName => { ... }",
-    "category": "Scripting",
-    "description": "Defines a reusable block of code under a specific name."
-  },
-  {
-    "type": "call",
-    "label": "Call Node",
-    "code": "CALL functionName => outputVariable",
-    "category": "Scripting",
-    "description": "Invokes a previously defined function and optionally captures its output."
-  },
-  {
-    "type": "wait",
-    "label": "Wait Node",
-    "code": "WAIT seconds => nextAction",
-    "category": "Flow Control",
-    "description": "Pauses execution for a specified duration before continuing."
-  },
-  {
-    "type": "switch",
-    "label": "Switch Node",
-    "code": "SWITCH variable => [case1 => action1, case2 => action2]",
-    "category": "Flow Control",
-    "description": "Evaluates a variable against multiple cases, executing the matching action block."
-  },
-  {
-    "type": "comment",
-    "label": "Comment Node",
-    "code": "COMMENT \"Your descriptive note here\"",
-    "category": "Utility",
-    "description": "Adds non-executable text within the script for clarity or notes."
-  },
-  {
-    "type": "debug",
-    "label": "Debug Node",
-    "code": "DEBUG variableName",
-    "category": "Utility",
-    "description": "Logs or inspects a variable’s value for troubleshooting."
-  },
-  {
-    "type": "variable",
-    "label": "Variable Node",
-    "code": "VARIABLE variableName => initialValue",
-    "category": "Data",
-    "description": "Declares a new variable with an optional initial value."
+    "type": "string",
+    "label": "Define Node",
+    "code": "NODE nodeName => { nodeType }",
+    "exampleTopic": "/cmd_vel",
+    "pubSubType": "Publisher",
+    "description": "Defines a node for publishing velocity commands to a robot for teleoperation."
   },
   {
     "type": "array",
-    "label": "Array Node",
-    "code": "ARRAY arrayName => [value1, value2, ...]",
-    "category": "Data",
-    "description": "Defines a simple list of values for iteration or storage."
+    "label": "Subscribe to Sensor Data",
+    "code": "SUBSCRIBE sensorData => [ /laser_scan, /camera/image_raw ]",
+    "exampleTopic": "/laser_scan",
+    "pubSubType": "Subscriber",
+    "description": "Subscribes to sensor topics like laser scan or camera for feedback during teleoperation."
   },
   {
-    "type": "dictionary",
-    "label": "Dictionary Node",
-    "code": "DICT dictName => { key1:value1, key2:value2, ... }",
-    "category": "Data",
-    "description": "Stores data as key-value pairs in a flexible structure."
+    "type": "array",
+    "label": "Set Teleoperation Control",
+    "code": "ARRAY controls => [ 'linear', 'angular' ]",
+    "exampleTopic": "/teleop/joystick",
+    "pubSubType": "Publisher",
+    "description": "Publishes joystick input for controlling linear and angular velocities."
   },
   {
-    "type": "animation",
-    "label": "Animation Node",
-    "code": "ANIMATE spriteName => animationState",
-    "category": "Graphics",
-    "description": "Controls sprite or character animation, transitioning to the specified state."
+    "type": "string",
+    "label": "Set Parameters",
+    "code": "PARAM paramName => paramValue",
+    "exampleTopic": "/set_param",
+    "pubSubType": "Publisher",
+    "description": "Sets operational parameters for teleoperation, like max speed or angular velocity limits."
+  },
+  {
+    "type": "object",
+    "label": "Control Status",
+    "code": "OBJECT status => { 'active': true, 'error': false }",
+    "exampleTopic": "/teleop/status",
+    "pubSubType": "Publisher",
+    "description": "Publishes the status of teleoperation controls, including active state and errors."
+  },
+  {
+    "type": "string",
+    "label": "Request Robot Pose",
+    "code": "REQUEST pose => { /robot_pose }",
+    "exampleTopic": "/robot_pose",
+    "pubSubType": "Subscriber",
+    "description": "Subscribes to the robot pose topic for localization feedback."
+  },
+  {
+    "type": "string",
+    "label": "Emergency Stop",
+    "code": "COMMAND emergencyStop => { /emergency_stop }",
+    "exampleTopic": "/emergency_stop",
+    "pubSubType": "Publisher",
+    "description": "Sends an emergency stop command to the robot for safety during teleoperations."
+  },
+  {
+    "type": "array",
+    "label": "Robot Arm Controls",
+    "code": "ARRAY armControl => [ 'grip', 'lift', 'rotate' ]",
+    "exampleTopic": "/robot_arm/control",
+    "pubSubType": "Publisher",
+    "description": "Publishes control commands for a robot arm in teleoperation."
+  },
+  {
+    "type": "string",
+    "label": "Camera Feed Subscription",
+    "code": "SUBSCRIBE videoFeed => { /camera/image_raw }",
+    "exampleTopic": "/camera/image_raw",
+    "pubSubType": "Subscriber",
+    "description": "Subscribes to the camera feed for live video during teleoperation."
+  },
+  {
+    "type": "object",
+    "label": "Joystick Input",
+    "code": "OBJECT joystick => { 'x': 0.5, 'y': -0.2, 'z': 0.0 }",
+    "exampleTopic": "/teleop/joystick",
+    "pubSubType": "Publisher",
+    "description": "Publishes joystick input for robot teleoperation control."
+  },
+  {
+    "type": "array",
+    "label": "Path Planning Nodes",
+    "code": "ARRAY pathNodes => [ 'start', 'goal' ]",
+    "exampleTopic": "/path_planning",
+    "pubSubType": "Publisher",
+    "description": "Publishes waypoints for path planning during teleoperations."
+  },
+  {
+    "type": "string",
+    "label": "Subscribe to Battery Status",
+    "code": "SUBSCRIBE batteryStatus => { /battery_state }",
+    "exampleTopic": "/battery_state",
+    "pubSubType": "Subscriber",
+    "description": "Monitors battery status to ensure adequate power for teleoperations."
+  },
+  {
+    "type": "array",
+    "label": "Multi-Robot Communication",
+    "code": "ARRAY multiRobotComm => [ /robot1/cmd_vel, /robot2/cmd_vel ]",
+    "exampleTopic": "/robot1/cmd_vel",
+    "pubSubType": "Publisher",
+    "description": "Facilitates communication between multiple robots for coordinated teleoperations."
+  },
+  {
+    "type": "string",
+    "label": "Set Obstacle Avoidance",
+    "code": "COMMAND obstacleAvoidance => { /avoidance_enabled }",
+    "exampleTopic": "/avoidance_enabled",
+    "pubSubType": "Publisher",
+    "description": "Activates or deactivates obstacle avoidance features during teleoperations."
+  },
+  {
+    "type": "string",
+    "label": "Log Data",
+    "code": "LOG logData => { /teleop/log }",
+    "exampleTopic": "/teleop/log",
+    "pubSubType": "Publisher",
+    "description": "Publishes log data for debugging or analysis of teleoperation activities."
+  },
+  {
+    "type": "object",
+    "label": "Gripper Control",
+    "code": "OBJECT gripper => { 'open': true, 'force': 0.8 }",
+    "exampleTopic": "/robot_arm/gripper",
+    "pubSubType": "Publisher",
+    "description": "Publishes gripper control commands for teleoperation tasks."
+  },
+  {
+    "type": "array",
+    "label": "Safety Zones",
+    "code": "ARRAY safetyZones => [ 'zone1', 'zone2', 'restricted' ]",
+    "exampleTopic": "/safety/zones",
+    "pubSubType": "Subscriber",
+    "description": "Subscribes to safety zone information to prevent collisions."
+  },
+  {
+    "type": "string",
+    "label": "Subscribe to Temperature",
+    "code": "SUBSCRIBE temperature => { /robot_temperature }",
+    "exampleTopic": "/robot_temperature",
+    "pubSubType": "Subscriber",
+    "description": "Monitors robot temperature during teleoperation to avoid overheating."
+  },
+  {
+    "type": "array",
+    "label": "Audio Commands",
+    "code": "ARRAY audioCmd => [ 'start', 'stop', 'reset' ]",
+    "exampleTopic": "/audio_commands",
+    "pubSubType": "Publisher",
+    "description": "Publishes audio commands for teleoperations or interactions."
+  },
+  {
+    "type": "string",
+    "label": "Sensor Fusion",
+    "code": "COMMAND sensorFusion => { /sensor_data }",
+    "exampleTopic": "/sensor_data",
+    "pubSubType": "Subscriber",
+    "description": "Subscribes to sensor fusion data for better environment perception during teleoperations."
   }
 ]

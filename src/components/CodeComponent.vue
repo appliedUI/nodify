@@ -1,8 +1,8 @@
 <template>
   <div class="p-0">
-    <pre class="rounded-lg bg-gray-900 p-4 overflow-x-auto">
-        <code class="text-xs text-gray-100">{{ formattedNodeCode }}</code>
-      </pre>
+    <div class="coder block rounded-lg bg-gray-900 p-4 overflow-x-auto">
+      <div class="text-xs text-gray-100">{{ formattedNodeCode }}</div>
+    </div>
   </div>
 </template>
 
@@ -28,8 +28,9 @@ watch(
 </script>
 
 <style scoped>
-pre {
-  margin: 0;
-  overflow-x: auto;
+.coder {
+  max-width: 100%;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 </style>

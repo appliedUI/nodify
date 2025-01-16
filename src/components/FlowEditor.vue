@@ -10,13 +10,13 @@
     <Controls class="!bg-gray-800 !border-gray-700" />
     <div>
       <div
-        class="absolute top-4 left-4 z-10 bg-gray-800 p-4 rounded-lg border border-gray-700 shadow-lg"
+        class="absolute top-4 left-4 z-10 bg-gray-800 rounded-lg border border-gray-700 shadow-lg"
         style="max-height: calc(300px); overflow-y: auto"
       >
         <div
           v-for="node in nodeTypes"
           :key="node.type"
-          class="draggable-node text-xs bg-gray-800 hover:bg-gray-900/50 text-gray-200 p-3 mb-2 rounded-md cursor-move transition-colors duration-200 shadow-sm"
+          class="draggable-node text-xs bg-gray-800 hover:bg-gray-900/50 text-gray-200 mb-2 rounded-md cursor-move transition-colors duration-200 shadow-sm"
           :draggable="true"
           @dragstart="(event) => onDragStart(event, node)"
         >
