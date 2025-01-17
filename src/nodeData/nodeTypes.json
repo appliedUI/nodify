@@ -5,7 +5,9 @@
     "code": "NODE nodeName => { nodeType }",
     "exampleTopic": "/cmd_vel",
     "pubSubType": "Publisher",
-    "description": "Defines a node for publishing velocity commands to a robot for teleoperation."
+    "description": "Defines a node for publishing velocity commands to a robot for teleoperation.",
+    "sourcePosition": "right",
+    "targetPosition": "left"
   },
   {
     "type": "array",
@@ -13,7 +15,9 @@
     "code": "SUBSCRIBE sensorData => [ /laser_scan, /camera/image_raw ]",
     "exampleTopic": "/laser_scan",
     "pubSubType": "Subscriber",
-    "description": "Subscribes to sensor topics like laser scan or camera for feedback during teleoperation."
+    "description": "Subscribes to sensor topics like laser scan or camera for feedback during teleoperation.",
+    "sourcePosition": "right",
+    "targetPosition": "left"
   },
   {
     "type": "array",
@@ -21,7 +25,9 @@
     "code": "ARRAY controls => [ 'linear', 'angular' ]",
     "exampleTopic": "/teleop/joystick",
     "pubSubType": "Publisher",
-    "description": "Publishes joystick input for controlling linear and angular velocities."
+    "description": "Publishes joystick input for controlling linear and angular velocities.",
+    "sourcePosition": "right",
+    "targetPosition": "left"
   },
   {
     "type": "string",
@@ -29,7 +35,9 @@
     "code": "PARAM paramName => paramValue",
     "exampleTopic": "/set_param",
     "pubSubType": "Publisher",
-    "description": "Sets operational parameters for teleoperation, like max speed or angular velocity limits."
+    "description": "Sets operational parameters for teleoperation, like max speed or angular velocity limits.",
+    "sourcePosition": "right",
+    "targetPosition": "left"
   },
   {
     "type": "object",
@@ -37,7 +45,9 @@
     "code": "OBJECT status => { 'active': true, 'error': false }",
     "exampleTopic": "/teleop/status",
     "pubSubType": "Publisher",
-    "description": "Publishes the status of teleoperation controls, including active state and errors."
+    "description": "Publishes the status of teleoperation controls, including active state and errors.",
+    "sourcePosition": "right",
+    "targetPosition": "left"
   },
   {
     "type": "string",
@@ -45,7 +55,9 @@
     "code": "REQUEST pose => { /robot_pose }",
     "exampleTopic": "/robot_pose",
     "pubSubType": "Subscriber",
-    "description": "Subscribes to the robot pose topic for localization feedback."
+    "description": "Subscribes to the robot pose topic for localization feedback.",
+    "sourcePosition": "right",
+    "targetPosition": "left"
   },
   {
     "type": "string",
@@ -53,7 +65,9 @@
     "code": "COMMAND emergencyStop => { /emergency_stop }",
     "exampleTopic": "/emergency_stop",
     "pubSubType": "Publisher",
-    "description": "Sends an emergency stop command to the robot for safety during teleoperations."
+    "description": "Sends an emergency stop command to the robot for safety during teleoperations.",
+    "sourcePosition": "right",
+    "targetPosition": "left"
   },
   {
     "type": "array",
@@ -61,7 +75,9 @@
     "code": "ARRAY armControl => [ 'grip', 'lift', 'rotate' ]",
     "exampleTopic": "/robot_arm/control",
     "pubSubType": "Publisher",
-    "description": "Publishes control commands for a robot arm in teleoperation."
+    "description": "Publishes control commands for a robot arm in teleoperation.",
+    "sourcePosition": "right",
+    "targetPosition": "left"
   },
   {
     "type": "string",
@@ -69,7 +85,9 @@
     "code": "SUBSCRIBE videoFeed => { /camera/image_raw }",
     "exampleTopic": "/camera/image_raw",
     "pubSubType": "Subscriber",
-    "description": "Subscribes to the camera feed for live video during teleoperation."
+    "description": "Subscribes to the camera feed for live video during teleoperation.",
+    "sourcePosition": "right",
+    "targetPosition": "left"
   },
   {
     "type": "object",
@@ -77,7 +95,9 @@
     "code": "OBJECT joystick => { 'x': 0.5, 'y': -0.2, 'z': 0.0 }",
     "exampleTopic": "/teleop/joystick",
     "pubSubType": "Publisher",
-    "description": "Publishes joystick input for robot teleoperation control."
+    "description": "Publishes joystick input for robot teleoperation control.",
+    "sourcePosition": "right",
+    "targetPosition": "left"
   },
   {
     "type": "array",
@@ -85,7 +105,9 @@
     "code": "ARRAY pathNodes => [ 'start', 'goal' ]",
     "exampleTopic": "/path_planning",
     "pubSubType": "Publisher",
-    "description": "Publishes waypoints for path planning during teleoperations."
+    "description": "Publishes waypoints for path planning during teleoperations.",
+    "sourcePosition": "right",
+    "targetPosition": "left"
   },
   {
     "type": "string",
@@ -93,7 +115,9 @@
     "code": "SUBSCRIBE batteryStatus => { /battery_state }",
     "exampleTopic": "/battery_state",
     "pubSubType": "Subscriber",
-    "description": "Monitors battery status to ensure adequate power for teleoperations."
+    "description": "Monitors battery status to ensure adequate power for teleoperations.",
+    "sourcePosition": "right",
+    "targetPosition": "left"
   },
   {
     "type": "array",
@@ -101,7 +125,9 @@
     "code": "ARRAY multiRobotComm => [ /robot1/cmd_vel, /robot2/cmd_vel ]",
     "exampleTopic": "/robot1/cmd_vel",
     "pubSubType": "Publisher",
-    "description": "Facilitates communication between multiple robots for coordinated teleoperations."
+    "description": "Facilitates communication between multiple robots for coordinated teleoperations.",
+    "sourcePosition": "right",
+    "targetPosition": "left"
   },
   {
     "type": "string",
@@ -109,7 +135,9 @@
     "code": "COMMAND obstacleAvoidance => { /avoidance_enabled }",
     "exampleTopic": "/avoidance_enabled",
     "pubSubType": "Publisher",
-    "description": "Activates or deactivates obstacle avoidance features during teleoperations."
+    "description": "Activates or deactivates obstacle avoidance features during teleoperations.",
+    "sourcePosition": "right",
+    "targetPosition": "left"
   },
   {
     "type": "string",
@@ -117,7 +145,9 @@
     "code": "LOG logData => { /teleop/log }",
     "exampleTopic": "/teleop/log",
     "pubSubType": "Publisher",
-    "description": "Publishes log data for debugging or analysis of teleoperation activities."
+    "description": "Publishes log data for debugging or analysis of teleoperation activities.",
+    "sourcePosition": "right",
+    "targetPosition": "left"
   },
   {
     "type": "object",
@@ -125,7 +155,9 @@
     "code": "OBJECT gripper => { 'open': true, 'force': 0.8 }",
     "exampleTopic": "/robot_arm/gripper",
     "pubSubType": "Publisher",
-    "description": "Publishes gripper control commands for teleoperation tasks."
+    "description": "Publishes gripper control commands for teleoperation tasks.",
+    "sourcePosition": "right",
+    "targetPosition": "left"
   },
   {
     "type": "array",
@@ -133,7 +165,9 @@
     "code": "ARRAY safetyZones => [ 'zone1', 'zone2', 'restricted' ]",
     "exampleTopic": "/safety/zones",
     "pubSubType": "Subscriber",
-    "description": "Subscribes to safety zone information to prevent collisions."
+    "description": "Subscribes to safety zone information to prevent collisions.",
+    "sourcePosition": "right",
+    "targetPosition": "left"
   },
   {
     "type": "string",
@@ -141,7 +175,9 @@
     "code": "SUBSCRIBE temperature => { /robot_temperature }",
     "exampleTopic": "/robot_temperature",
     "pubSubType": "Subscriber",
-    "description": "Monitors robot temperature during teleoperation to avoid overheating."
+    "description": "Monitors robot temperature during teleoperation to avoid overheating.",
+    "sourcePosition": "right",
+    "targetPosition": "left"
   },
   {
     "type": "array",
@@ -149,7 +185,9 @@
     "code": "ARRAY audioCmd => [ 'start', 'stop', 'reset' ]",
     "exampleTopic": "/audio_commands",
     "pubSubType": "Publisher",
-    "description": "Publishes audio commands for teleoperations or interactions."
+    "description": "Publishes audio commands for teleoperations or interactions.",
+    "sourcePosition": "right",
+    "targetPosition": "left"
   },
   {
     "type": "string",
@@ -157,6 +195,8 @@
     "code": "COMMAND sensorFusion => { /sensor_data }",
     "exampleTopic": "/sensor_data",
     "pubSubType": "Subscriber",
-    "description": "Subscribes to sensor fusion data for better environment perception during teleoperations."
+    "description": "Subscribes to sensor fusion data for better environment perception during teleoperations.",
+    "sourcePosition": "right",
+    "targetPosition": "left"
   }
 ]

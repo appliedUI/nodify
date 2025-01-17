@@ -1,7 +1,9 @@
 <template>
   <VueFlow
     v-model="elements"
-    :default-viewport="{ zoom: 1.5 }"
+    :default-viewport="{ zoom: 1.1 }"
+    :snap-to-grid="true"
+    :snap-grid="[16, 16]"
     @dragover="onDragOver"
     @drop="onDrop"
     class="dark"
@@ -54,13 +56,20 @@ const onDragOver = (event) => {
 
 const onDrop = (event) => {
   const type = event.dataTransfer.getData("application/vueflow");
-  const position = project({ x: event.clientX, y: event.clientY });
+  const { x, y } = project({ x: event.clientX, y: event.clientY });
   const nodeType = nodeTypes.find((n) => n.type === type);
 
   if (!nodeType) {
     console.warn("No node type found for:", type);
     return;
   }
+
+  // Snap position to grid
+  const snapToGrid = (pos, gridSize) => Math.round(pos / gridSize) * gridSize;
+  const position = {
+    x: snapToGrid(x, 16),
+    y: snapToGrid(y, 16),
+  };
 
   const newNode = {
     id: `node-${id}`,
@@ -71,6 +80,8 @@ const onDrop = (event) => {
     data: {
       code: nodeType.code || "",
     },
+    sourcePosition: "right",
+    targetPosition: "left",
   };
 
   id++;
@@ -105,12 +116,34 @@ const updateCodeFromNodes = () => {
   @apply bg-gray-800 border-gray-600 text-gray-200 shadow-lg;
 }
 
+:deep(.vue-flow__node.selected) {
+  @apply border-blue-400; /* Selection border color */
+  box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.5); /* Optional glow effect */
+}
+
 :deep(.vue-flow__handle) {
-  @apply bg-gray-600 border-gray-700;
+  @apply border-gray-700;
+  width: 10px;
+  height: 10px;
+}
+
+:deep(.vue-flow__handle.source) {
+  @apply bg-green-500;
+  right: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+:deep(.vue-flow__handle.target) {
+  @apply bg-blue-500;
+  left: -5px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 :deep(.vue-flow__edge-path) {
-  stroke: #4b5563;
+  stroke: #0b8bcb; /* Bright blue color for edges */
+  stroke-width: 2;
 }
 
 :deep(.vue-flow__controls button) {
