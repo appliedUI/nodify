@@ -5,6 +5,7 @@
     :snap-to-grid="true"
     :snap-grid="[16, 16]"
     @dragover="onDragOver"
+    @nodeClick="onNodeClick"
     class="dark"
     selection-key="Control"
     multi-selection-key="Shift"
@@ -63,7 +64,7 @@
 </template>
 
 <script setup>
-import { ref, markRaw } from "vue";
+import { ref, markRaw, watch } from "vue";
 import { VueFlow, useVueFlow, SelectionMode, Position } from "@vue-flow/core";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
@@ -96,12 +97,15 @@ const nodeTypes = markRaw({
 
 // Helper functions
 const createNode = (type, position, nodeType) => ({
-  id: `node-${id++}`,
+  id: nodeType?.id, // <-- use nodeType's UUID
   type,
-  label: `${type.charAt(0).toUpperCase() + type.slice(1)}`,
+  label: nodeType?.label || `${type.charAt(0).toUpperCase() + type.slice(1)}`,
   position,
+  data: {
+    code: nodeType?.code || "",
+    nodeId: nodeType?.id, // store the UUID again
+  },
   draggable: true,
-  data: { code: nodeType?.code || "" },
   sourcePosition: "right",
   targetPosition: "left",
 });
@@ -109,13 +113,32 @@ const createNode = (type, position, nodeType) => ({
 const snapToGrid = (pos) => Math.round(pos / GRID_SIZE) * GRID_SIZE;
 
 const updateCodeFromNodes = () => {
-  const codeBlocks = elements.value
-    .filter((el) => el.type)
-    .map((node) => node.data?.code?.trim() || "")
-    .filter((code) => code.trim() !== "")
-    .join("\n\n");
-  codeStore.updateNodeCode(codeBlocks);
+  const nodeBlocks = elements.value
+    .filter((el) => el.type && el.data?.nodeId)
+    .map((node) => ({
+      id: node.data.nodeId,
+      code: node.data.code.trim() || "",
+    }))
+    .filter((block) => block.code !== "");
+  codeStore.updateNodeBlocks(nodeBlocks);
 };
+
+// Listen for node clicks and update selectedNodeId
+function onNodeClick(event, node) {
+  codeStore.updateSelectedNodeId(node.data.nodeId);
+}
+
+// Watch the store for selection changes and highlight the matching node
+watch(
+  () => codeStore.selectedNodeId,
+  (newId) => {
+    elements.value.forEach((el) => {
+      if (el.type) {
+        el.selected = el.data?.nodeId === newId;
+      }
+    });
+  }
+);
 
 const addNode = (nodeType) => {
   const lastNode = elements.value[elements.value.length - 1];
@@ -124,7 +147,13 @@ const addNode = (nodeType) => {
     y: lastNode ? lastNode.position.y : 40,
   };
 
-  const newNode = createNode(nodeType?.type || "default", position, nodeType);
+  const newNode = createNode(nodeType.type, position, {
+    id: nodeType.id,
+    label: nodeType.label,
+    code: nodeType.code,
+    type: nodeType.type,
+  });
+
   elements.value = [...elements.value, newNode];
   updateCodeFromNodes();
 };
