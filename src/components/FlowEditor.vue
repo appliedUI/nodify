@@ -112,9 +112,10 @@ const updateCodeFromNodes = () => {
 };
 
 const addNode = (nodeType) => {
+  const lastNode = elements.value[elements.value.length - 1];
   const position = {
-    x: 200, // Default X position
-    y: 0 + id * 50, // Stagger Y position for each new node
+    x: lastNode ? lastNode.position.x + 180 : 200, // Place to the right of last node
+    y: lastNode ? lastNode.position.y : 40, // Same Y position as last node
   };
 
   const newNode = {
