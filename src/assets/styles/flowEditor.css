@@ -40,16 +40,17 @@
 }
 
 .vue-flow__handle.source {
-  @apply bg-green-500;
+  @apply bg-green-300;
   right: -5px;
   top: 50%;
   transform: translateY(-50%);
 }
 
 .vue-flow__handle.target {
-  @apply bg-blue-500;
+  @apply bg-green-300 !important;
   left: -5px;
   top: 50%;
+  border: 1px solid #10b981;
   transform: translateY(-50%);
 }
 
