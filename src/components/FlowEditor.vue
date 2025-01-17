@@ -21,6 +21,7 @@
           class="draggable-node text-xs bg-gray-800 hover:bg-gray-900/50 text-gray-200 mb-2 rounded-md cursor-move transition-colors duration-200 shadow-sm"
           :draggable="true"
           @dragstart="(event) => onDragStart(event, node)"
+          @click="addNode(node)"
         >
           {{ node.label }}
         </div>
@@ -108,6 +109,30 @@ const updateCodeFromNodes = () => {
     .join("\n\n");
 
   codeStore.updateNodeCode(codeBlocks);
+};
+
+const addNode = (nodeType) => {
+  const position = {
+    x: 200, // Default X position
+    y: 0 + id * 50, // Stagger Y position for each new node
+  };
+
+  const newNode = {
+    id: `node-${id}`,
+    type: nodeType.type,
+    label: `${nodeType.type.charAt(0).toUpperCase() + nodeType.type.slice(1)}`,
+    position,
+    draggable: true,
+    data: {
+      code: nodeType.code || "",
+    },
+    sourcePosition: "right",
+    targetPosition: "left",
+  };
+
+  id++;
+  elements.value = [...elements.value, newNode];
+  updateCodeFromNodes();
 };
 </script>
 
