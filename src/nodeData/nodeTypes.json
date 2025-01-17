@@ -1,142 +1,37 @@
 [
   {
-    "id": "3f29b1a4-8c6e-4d2a-9f1e-1a2b3c4d5e6f",
-    "type": "template",
-    "label": "Define Template",
-    "code": "<template>\n  <div class=\"page-container\">\n    <h1>{{ pageTitle }}</h1>\n    <input v-model=\"userInput\" placeholder=\"Enter something\" />\n    <button @click=\"handleSubmit\">Submit</button>\n    <p>{{ outputMessage }}</p>\n  </div>\n</template>",
-    "description": "Defines the core HTML structure of a Vue 3 page with dynamic data binding and event handling."
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "type": "VueComponent",
+    "label": "Vue",
+    "code": "<template>\n  <div class=\"user-input-container\">\n    <h1>{{ title }}</h1>\n    <input v-model=\"inputText\" placeholder=\"Enter your text\" />\n    <button @click=\"submitInput\">Submit</button>\n    <p>{{ response }}</p>\n  </div>\n</template>\n\n<script setup>\nimport { ref } from 'vue';\nimport { useUserStore } from '@/stores/userStore';\nimport { fetchAIResponse } from '@/utils/aiHelper';\n\nconst props = defineProps({\n  title: {\n    type: String,\n    default: 'User Input'\n  }\n});\n\nconst emit = defineEmits(['inputSubmitted']);\n\nconst inputText = ref('');\nconst response = ref('');\n\nconst userStore = useUserStore();\n\nconst submitInput = async () => {\n  if (inputText.value.trim()) {\n    userStore.addInput(inputText.value);\n    response.value = 'Processing...';\n    try {\n      const aiResponse = await fetchAIResponse(inputText.value);\n      response.value = aiResponse;\n      emit('inputSubmitted', aiResponse);\n    } catch (error) {\n      response.value = 'Error fetching AI response.';\n      console.error(error);\n    }\n  }\n};\n</script>\n\n<style scoped>\n.user-input-container {\n  max-width: 500px;\n  margin: 0 auto;\n  padding: 20px;\n  border: 1px solid #ccc;\n  border-radius: 8px;\n  text-align: center;\n}\ninput {\n  width: 80%;\n  padding: 8px;\n  margin: 10px 0;\n  border: 1px solid #ccc;\n  border-radius: 4px;\n}\nbutton {\n  padding: 10px 20px;\n  background-color: #42b883;\n  color: white;\n  border: none;\n  border-radius: 4px;\n  cursor: pointer;\n}\nbutton:hover {\n  background-color: #369870;\n}\n</style>",
+    "description": "A complete Vue 3 component using the <script setup> syntax. It includes data binding, event handling, interaction with a Pinia store, and integration with an AI helper script."
   },
   {
-    "id": "7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
-    "type": "script",
-    "label": "Setup Script",
-    "code": "<script setup>\nimport { ref } from 'vue';\nimport { useMyStore } from '@/stores/myStore';\n\nconst pageTitle = ref('Welcome to Vue 3 Page');\nconst userInput = ref('');\nconst outputMessage = ref('');\n\nconst myStore = useMyStore();\n\nfunction handleSubmit() {\n  outputMessage.value = `Hello, ${userInput.value}!`;\n  myStore.updateData(userInput.value);\n}\n</script>",
-    "description": "Defines the script setup block with reactive data, store access, and methods."
+    "id": "b2c3d4e5-f6a7-8901-bcde-f23456789012",
+    "type": "PiniaStore",
+    "label": "PiniaStore",
+    "code": "import { defineStore } from 'pinia';\n\nexport const useUserStore = defineStore('userStore', {\n  state: () => ({\n    inputs: []\n  }),\n  actions: {\n    addInput(newInput) {\n      this.inputs.push({\n        text: newInput,\n        timestamp: new Date()\n      });\n    },\n    clearInputs() {\n      this.inputs = [];\n    }\n  },\n  getters: {\n    inputCount: (state) => state.inputs.length,\n    recentInput: (state) => state.inputs[state.inputs.length - 1]\n  }\n});",
+    "description": "Defines a Pinia store for managing user inputs. It includes state, actions to modify the state, and getters for derived state."
   },
   {
-    "id": "4e5f6g7h-8i9j-0k1l-2m3n-4o5p6q7r8s9t",
-    "type": "style",
-    "label": "Define Styles",
-    "code": "<style scoped>\n.page-container {\n  max-width: 600px;\n  margin: 0 auto;\n  text-align: center;\n}\nbutton {\n  margin-top: 10px;\n  padding: 10px;\n  background-color: #42b883;\n  color: white;\n  border: none;\n  border-radius: 5px;\n  cursor: pointer;\n}\n</style>",
-    "description": "Defines scoped styles for the Vue 3 page."
+    "id": "c3d4e5f6-a7b8-9012-cdef-345678901234",
+    "type": "ExpressAPI",
+    "label": "ExpressAPI",
+    "code": "const express = require('express');\nconst router = express.Router();\nconst { processInput } = require('../controllers/inputController');\n\n// POST /api/submit\nrouter.post('/submit', async (req, res) => {\n  const { userInput } = req.body;\n  if (!userInput) {\n    return res.status(400).json({ message: 'User input is required.' });\n  }\n  try {\n    const result = await processInput(userInput);\n    res.status(200).json({ response: result });\n  } catch (error) {\n    console.error(error);\n    res.status(500).json({ message: 'Server error.' });\n  }\n});\n\nmodule.exports = router;",
+    "description": "An Express.js API endpoint that handles POST requests to submit user input. It processes the input using a controller and returns the result."
   },
   {
-    "id": "5u6v7w8x-9y0z-1a2b-3c4d-5e6f7g8h9i0j",
-    "type": "store",
-    "label": "Pinia Store Access",
-    "code": "import { defineStore } from 'pinia';\n\nexport const useMyStore = defineStore('myStore', {\n  state: () => ({\n    data: ''\n  }),\n  actions: {\n    updateData(newData) {\n      this.data = newData;\n    }\n  }\n});",
-    "description": "Defines a Pinia store for state management and integration with the Vue 3 page."
+    "id": "d4e5f6g7-b8c9-0123-def0-456789012345",
+    "type": "MongoDBAccessScript",
+    "label": "Mongo DB",
+    "code": "const mongoose = require('mongoose');\n\nconst connectDB = async () => {\n  try {\n    await mongoose.connect(process.env.MONGODB_URI, {\n      useNewUrlParser: true,\n      useUnifiedTopology: true\n    });\n    console.log('MongoDB connected successfully.');\n  } catch (error) {\n    console.error('MongoDB connection error:', error);\n    process.exit(1);\n  }\n};\n\nmodule.exports = connectDB;\n\n// Example Mongoose Schema and Model\nconst userInputSchema = new mongoose.Schema({\n  text: { type: String, required: true },\n  timestamp: { type: Date, default: Date.now }\n});\n\nconst UserInput = mongoose.model('UserInput', userInputSchema);\n\nmodule.exports.UserInput = UserInput;",
+    "description": "Sets up a MongoDB connection using Mongoose and defines a schema and model for storing user inputs."
   },
   {
-    "id": "6j7k8l9m-0n1o-2p3q-4r5s-6t7u8v9w0x1y",
-    "type": "import",
-    "label": "Vue Imports",
-    "code": "import { ref } from 'vue';\nimport { useMyStore } from '@/stores/myStore';",
-    "description": "Imports required modules and stores for the Vue 3 page."
-  },
-  {
-    "id": "7z8a9b0c-1d2e-3f4g-5h6i-7j8k9l0m1n2o",
-    "type": "input",
-    "label": "User Input",
-    "code": "<input v-model=\"userInput\" placeholder=\"Type here\" />",
-    "description": "Creates a two-way data binding input field for user input."
-  },
-  {
-    "id": "8p9q0r1s-2t3u-4v5w-6x7y-8z9a0b1c2d3e",
-    "type": "output",
-    "label": "Output Field",
-    "code": "<p>{{ outputMessage }}</p>",
-    "description": "Displays the dynamic output message generated by Vue logic."
-  },
-  {
-    "id": "9f0g1h2i-3j4k-5l6m-7n8o-9p0q1r2s3t4u",
-    "type": "event",
-    "label": "Button Click Event",
-    "code": "<button @click=\"handleSubmit\">Submit</button>",
-    "description": "Handles button click events and calls the corresponding method."
-  },
-  {
-    "id": "0v1w2x3y-4z5a-6b7c-8d9e-0f1g2h3i4j5k",
-    "type": "computed",
-    "label": "Computed Property",
-    "code": "const uppercaseMessage = computed(() => outputMessage.value.toUpperCase());",
-    "description": "Defines a computed property for deriving uppercase text from the output message."
-  },
-  {
-    "id": "1l2m3n4o-5p6q-7r8s-9t0u-1v2w3x4y5z6a",
-    "type": "watch",
-    "label": "Watch User Input",
-    "code": "watch(userInput, (newVal, oldVal) => {\n  console.log(`Input changed from ${oldVal} to ${newVal}`);\n});",
-    "description": "Adds a watch function to observe changes to `userInput`."
-  },
-  {
-    "id": "2b3c4d5e-6f7g-8h9i-0j1k-2l3m4n5o6p7q",
-    "type": "prop",
-    "label": "Prop Definition",
-    "code": "const props = defineProps({\n  title: {\n    type: String,\n    required: true\n  }\n});",
-    "description": "Defines a prop for passing data into the Vue 3 component."
-  },
-  {
-    "id": "3c4d5e6f-7g8h-9i0j-1k2l-3m4n5o6p7q8r",
-    "type": "emit",
-    "label": "Emit Event",
-    "code": "const emit = defineEmits(['customEvent']);\n\nfunction triggerEvent() {\n  emit('customEvent', userInput.value);\n}",
-    "description": "Defines an emit event to communicate data from child to parent components."
-  },
-  {
-    "id": "4d5e6f7g-8h9i-0j1k-2l3m-4n5o6p7q8r9s",
-    "type": "slot",
-    "label": "Slot Usage",
-    "code": "<slot name=\"customContent\"></slot>",
-    "description": "Defines a slot for injecting custom content into the component."
-  },
-  {
-    "id": "5e6f7g8h-9i0j-1k2l-3m4n-5o6p7q8r9s0t",
-    "type": "directive",
-    "label": "Custom Directive",
-    "code": "<div v-my-directive=\"dynamicValue\"></div>",
-    "description": "Demonstrates the use of a custom directive in Vue 3."
-  },
-  {
-    "id": "6f7g8h9i-0j1k-2l3m-4n5o-6p7q8r9s0t1u",
-    "type": "function",
-    "label": "Custom Method",
-    "code": "function handleSubmit() {\n  outputMessage.value = `Hello, ${userInput.value}!`;\n}",
-    "description": "Defines a custom method to handle business logic."
-  },
-  {
-    "id": "7g8h9i0j-1k2l-3m4n-5o6p-7q8r9s0t1u2v",
-    "type": "router",
-    "label": "Vue Router Navigation",
-    "code": "import { useRouter } from 'vue-router';\n\nconst router = useRouter();\n\nfunction navigate() {\n  router.push('/next-page');\n}",
-    "description": "Provides navigation capabilities using Vue Router."
-  },
-  {
-    "id": "8h9i0j1k-2l3m-4n5o-6p7q-8r9s0t1u2v3w",
-    "type": "axios",
-    "label": "API Call with Axios",
-    "code": "import axios from 'axios';\n\nfunction fetchData() {\n  axios.get('/api/data').then(response => {\n    console.log(response.data);\n  });\n}",
-    "description": "Demonstrates how to fetch data from an API using Axios."
-  },
-  {
-    "id": "9i0j1k2l-3m4n-5o6p-7q8r-9s0t1u2v3w4x",
-    "type": "error",
-    "label": "Error Handling",
-    "code": "try {\n  // Some logic\n} catch (error) {\n  console.error('An error occurred:', error);\n}",
-    "description": "Adds error handling to ensure robust code execution."
-  },
-  {
-    "id": "0j1k2l3m-4n5o-6p7q-8r9s-0t1u2v3w4x5y",
-    "type": "transition",
-    "label": "Add Transition",
-    "code": "<transition name=\"fade\">\n  <div v-if=\"isVisible\">Content</div>\n</transition>",
-    "description": "Applies a smooth transition to elements in the template."
-  },
-  {
-    "id": "1k2l3m4n-5o6p-7q8r-9s0t-1u2v3w4x5y6z",
-    "type": "provideInject",
-    "label": "Provide and Inject",
-    "code": "// Provider\nprovide('key', value);\n\n// Injector\nconst injectedValue = inject('key');",
-    "description": "Demonstrates dependency injection between parent and child components."
+    "id": "e5f6g7h8-c9d0-1234-ef01-567890123456",
+    "type": "AIHelperScript",
+    "label": "AI API",
+    "code": "const { Configuration, OpenAIApi } = require('openai');\n\nconst configuration = new Configuration({\n  apiKey: process.env.OPENAI_API_KEY\n});\n\nconst openai = new OpenAIApi(configuration);\n\n/**\n * Fetches a response from OpenAI based on the user input.\n * @param {string} input - The user's input text.\n * @returns {Promise<string>} - The AI-generated response.\n */\nconst fetchAIResponse = async (input) => {\n  try {\n    const response = await openai.createCompletion({\n      model: 'text-davinci-003',\n      prompt: `Respond to the following input in a helpful manner:\\n\\n${input}`,\n      max_tokens: 150,\n      temperature: 0.7\n    });\n    return response.data.choices[0].text.trim();\n  } catch (error) {\n    console.error('Error fetching AI response:', error);\n    throw new Error('AI service unavailable.');\n  }\n};\n\nmodule.exports = { fetchAIResponse };",
+    "description": "A helper script that connects to OpenAI's API to fetch AI-generated responses based on user input. It uses the OpenAI SDK and handles configuration and error management."
   }
 ]
