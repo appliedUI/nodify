@@ -21,6 +21,12 @@
     <Background pattern-color="#4B5563" :gap="8" />
     <Controls class="!bg-gray-800 !border-gray-700" />
     <div>
+      <button
+        @click="nestSelectedNodes"
+        class="absolute top-4 right-4 z-10 bg-gray-800 rounded-lg border border-gray-700 shadow-lg px-4 py-2 text-gray-200 hover:bg-gray-900/50 transition-colors duration-200"
+      >
+        Nest Selected Nodes
+      </button>
       <div
         class="absolute top-4 left-4 z-10 bg-gray-800 rounded-lg border border-gray-700 shadow-lg"
         style="max-height: calc(300px); overflow-y: auto"
@@ -48,7 +54,9 @@ import { Controls } from "@vue-flow/controls";
 import { useCodeStore } from "@/stores/codeStore";
 import nodeTypes from "@/nodeData/nodeTypes.json";
 
-const { onConnect, addEdges, project } = useVueFlow();
+const vueFlow = useVueFlow();
+const { onConnect, addEdges, project, addNodes, updateNode } = vueFlow;
+const getNodes = () => vueFlow.getNodes();
 
 const elements = ref([]);
 let id = 1;
@@ -68,7 +76,7 @@ const onDragOver = (event) => {
 };
 
 const onDrop = (event) => {
-  const type = event.dataTransfer.getData("application/vueflow");
+  const type = event.dataTransfer.getData("application/vueflow") || "default";
   const { x, y } = project({ x: event.clientX, y: event.clientY });
   const nodeType = nodeTypes.find((n) => n.type === type);
 
@@ -126,18 +134,21 @@ const updateCodeFromNodes = () => {
 const addNode = (nodeType) => {
   const lastNode = elements.value[elements.value.length - 1];
   const position = {
-    x: lastNode ? lastNode.position.x + 180 : 200, // Place to the right of last node
-    y: lastNode ? lastNode.position.y : 40, // Same Y position as last node
+    x: lastNode ? lastNode.position.x + 180 : 200,
+    y: lastNode ? lastNode.position.y : 40,
   };
 
   const newNode = {
     id: `node-${id}`,
-    type: nodeType.type,
-    label: `${nodeType.type.charAt(0).toUpperCase() + nodeType.type.slice(1)}`,
+    type: nodeType?.type || "default",
+    label: `${
+      (nodeType?.type || "default").charAt(0).toUpperCase() +
+      (nodeType?.type || "default").slice(1)
+    }`,
     position,
     draggable: true,
     data: {
-      code: nodeType.code || "",
+      code: nodeType?.code || "",
     },
     sourcePosition: "right",
     targetPosition: "left",
@@ -146,6 +157,99 @@ const addNode = (nodeType) => {
   id++;
   elements.value = [...elements.value, newNode];
   updateCodeFromNodes();
+};
+
+const nestSelectedNodes = () => {
+  try {
+    const selectedNodes = elements.value.filter(
+      (node) => node.selected && node.type !== undefined
+    );
+
+    if (selectedNodes.length < 2) {
+      console.warn("Select at least 2 nodes to nest");
+      return;
+    }
+
+    // Increased padding and spacing
+    const PADDING = 100; // Larger padding for more space
+    const NODE_SPACING = 50; // Additional spacing between nodes
+    const DEFAULT_NODE_WIDTH = 150;
+    const DEFAULT_NODE_HEIGHT = 50;
+
+    // Calculate the bounding box with extra space
+    const minX = Math.min(...selectedNodes.map((node) => node.position.x));
+    const minY = Math.min(...selectedNodes.map((node) => node.position.y));
+    const maxX = Math.max(
+      ...selectedNodes.map(
+        (node) =>
+          node.position.x + (node.dimensions?.width || DEFAULT_NODE_WIDTH)
+      )
+    );
+    const maxY = Math.max(
+      ...selectedNodes.map(
+        (node) =>
+          node.position.y + (node.dimensions?.height || DEFAULT_NODE_HEIGHT)
+      )
+    );
+
+    // Calculate group dimensions with extra space
+    const groupWidth = maxX - minX + PADDING * 2 + NODE_SPACING;
+    const groupHeight = maxY - minY + PADDING * 2 + NODE_SPACING;
+
+    // Create parent node with larger dimensions
+    const parentNode = {
+      id: `node-${id}`,
+      type: "group",
+      class: "resizable-group",
+      label: "Group",
+      position: { x: minX - PADDING, y: minY - PADDING },
+      style: {
+        backgroundColor: "rgba(16, 185, 129, 0.1)",
+        border: "1px solid rgba(16, 185, 129, 0.5)",
+        borderRadius: "8px",
+        width: `${groupWidth}px`,
+        height: `${groupHeight}px`,
+        padding: `${PADDING}px`,
+        resize: "both",
+        overflow: "hidden",
+        boxSizing: "border-box",
+      },
+      data: {},
+      draggable: true,
+      selectable: true,
+      dimensions: {
+        width: groupWidth,
+        height: groupHeight,
+      },
+      resizing: true,
+    };
+    id++;
+
+    // Add the parent node
+    elements.value = [...elements.value, parentNode];
+
+    // Update selected nodes to be children of the new parent
+    elements.value = elements.value.map((node) => {
+      if (node.selected && node.type !== undefined) {
+        return {
+          ...node,
+          parentNode: parentNode.id,
+          extent: "parent",
+          // Adjust position to be relative to parent with extra spacing
+          position: {
+            x: node.position.x - minX + PADDING + NODE_SPACING / 2,
+            y: node.position.y - minY + PADDING + NODE_SPACING / 2,
+          },
+          selected: false,
+        };
+      }
+      return node;
+    });
+
+    updateCodeFromNodes();
+  } catch (error) {
+    console.error("Error nesting nodes:", error);
+  }
 };
 </script>
 
@@ -210,5 +314,70 @@ const addNode = (nodeType) => {
   background: rgba(96, 165, 250, 0.1);
   border: 1px solid rgba(96, 165, 250, 0.5);
   pointer-events: none;
+}
+
+:deep(.vue-flow__node.resizable-group) {
+  resize: both;
+  overflow: hidden;
+  min-width: 200px;
+  min-height: 100px;
+  box-sizing: border-box;
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  background-color: rgba(16, 185, 129, 0.1);
+  border-radius: 8px;
+  padding: 20px;
+}
+
+:deep(.vue-flow__node.resizable-group::after) {
+  content: "";
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 12px;
+  height: 12px;
+  cursor: se-resize;
+  background: linear-gradient(
+    135deg,
+    transparent 50%,
+    rgba(16, 185, 129, 0.8) 50%
+  );
+  border-bottom-right-radius: 4px;
+  opacity: var(--resize-handle-opacity);
+  pointer-events: var(--resize-handle-pointer-events);
+  z-index: 10;
+  transition: opacity 0.2s ease;
+}
+
+:deep(.vue-flow__node.resizable-group:hover) {
+  border: 1px solid rgba(16, 185, 129, 0.8);
+}
+
+:deep(.vue-flow__node.resizable-group.selected) {
+  border-color: rgba(16, 185, 129, 1);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4);
+}
+
+.pan-toggle-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  padding: 8px 16px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.pan-toggle-button:hover {
+  background: #f7fafc;
+}
+
+.pan-toggle-button.active {
+  background: #10b981;
+  color: white;
+  border-color: #10b981;
 }
 </style>
