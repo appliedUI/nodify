@@ -1,7 +1,7 @@
 <template>
   <div class="p-0 flex h-full" ref="container">
     <div
-      class="coder block rounded-lg bg-gray-900 p-4 overflow-x-auto h-full"
+      class="coder block rounded-lg bg-gray-900 p-0 overflow-x-auto h-full"
       :style="{ width: `${codeWidth}px` }"
     >
       <div
@@ -11,7 +11,7 @@
         :class="{ 'bg-black': selectedBlockIndex === index }"
         @click="selectBlock(index)"
       >
-        <div class="text-xs text-gray-100">{{ block }}</div>
+        <div class="text-xs text-gray-100" v-html="block.highlighted"></div>
       </div>
     </div>
     <div
@@ -43,6 +43,8 @@ import { storeToRefs } from "pinia";
 import { onMounted, watch, ref, computed } from "vue";
 import ParamsComponent from "@/components/ParamsComponent.vue";
 import CompiledComponent from "@/components/CompiledComponent.vue";
+import hljs from "highlight.js";
+import "highlight.js/styles/github-dark.css";
 
 const codeStore = useCodeStore();
 const { formattedNodeCode } = storeToRefs(codeStore);
@@ -129,7 +131,12 @@ const selectedBlockIndex = ref(null);
 watch(
   formattedNodeCode,
   (newCode) => {
-    codeBlocks.value = newCode.split("\n\n"); // Split by double newlines
+    codeBlocks.value = newCode.split("\n\n").map((block) => {
+      return {
+        raw: block,
+        highlighted: hljs.highlightAuto(block).value,
+      };
+    });
     console.log("Code blocks updated:", codeBlocks.value);
   },
   { immediate: true }
