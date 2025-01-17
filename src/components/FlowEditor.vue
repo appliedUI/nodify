@@ -7,6 +7,16 @@
     @dragover="onDragOver"
     @drop="onDrop"
     class="dark"
+    selection-key="Control"
+    multi-selection-key="Shift"
+    :pan-on-drag="[1, 2]"
+    :selection-on-drag="true"
+    :nodes-draggable="true"
+    :nodes-connectable="true"
+    :elements-selectable="true"
+    :selection-mode="selectionMode"
+    :zoom-on-double-click="false"
+    :pan-on-scroll="true"
   >
     <Background pattern-color="#4B5563" :gap="8" />
     <Controls class="!bg-gray-800 !border-gray-700" />
@@ -32,7 +42,7 @@
 
 <script setup>
 import { ref } from "vue";
-import { VueFlow, useVueFlow } from "@vue-flow/core";
+import { VueFlow, useVueFlow, SelectionMode } from "@vue-flow/core";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
 import { useCodeStore } from "@/stores/codeStore";
@@ -43,6 +53,8 @@ const { onConnect, addEdges, project } = useVueFlow();
 const elements = ref([]);
 let id = 1;
 const codeStore = useCodeStore();
+
+const selectionMode = ref(SelectionMode.Partial);
 
 // ... rest of the methods moved from App.vue ...
 const onDragStart = (event, node) => {
@@ -186,5 +198,17 @@ const addNode = (nodeType) => {
 
 .draggable-node {
   user-select: none;
+}
+
+:deep(.vue-flow__selection) {
+  background: rgba(96, 165, 250, 0.1);
+  border: 1px solid rgba(96, 165, 250, 0.5);
+  pointer-events: none;
+}
+
+:deep(.vue-flow__selection-rect) {
+  background: rgba(96, 165, 250, 0.1);
+  border: 1px solid rgba(96, 165, 250, 0.5);
+  pointer-events: none;
 }
 </style>
