@@ -6,8 +6,6 @@
     :snap-grid="[16, 16]"
     @dragover="onDragOver"
     @drop="onDrop"
-    @nodeDoubleClick="onNodeDoubleClick"
-    @nodeDragStop="onNodeDragStop"
     class="dark"
     selection-key="Control"
     multi-selection-key="Shift"
@@ -247,6 +245,11 @@ const nestSelectedNodes = () => {
   } catch (error) {
     console.error("Error nesting nodes:", error);
   }
+};
+
+const onNodeDragStop = (event, node) => {
+  // Your drag stop logic here
+  console.log("Node drag stopped:", node);
 };
 </script>
 
