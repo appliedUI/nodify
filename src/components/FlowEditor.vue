@@ -144,6 +144,7 @@ onConnect((params) => {
     target: params.target,
     animated: true,
     style: { stroke: "#555", strokeWidth: 2 },
+    zIndex: 2, // Set zIndex higher to ensure visibility with grouped nodes
   };
   addEdges([newEdge]);
 });
@@ -188,8 +189,9 @@ const addNode = (nodeType) => {
 
 const nestSelectedNodes = () => {
   try {
+    // Only get actual nodes, not edges
     const selectedNodes = elements.value.filter(
-      (node) => node.selected && node.type !== undefined
+      (el) => el.selected && el.position && el.type !== "resizableGroup"
     );
 
     if (selectedNodes.length < 2) {
@@ -197,8 +199,18 @@ const nestSelectedNodes = () => {
       return;
     }
 
-    // Get existing edges
-    const edges = elements.value.filter((el) => !el.type || el.type === "edge");
+    // Get all edges
+    const edges = elements.value
+      .filter((el) => !el.position)
+      .map((edge) => ({
+        ...edge,
+        zIndex: 2, // Set edges to be above nodes
+      }));
+
+    // Get non-selected nodes (excluding edges)
+    const nonSelectedNodes = elements.value.filter(
+      (el) => el.position && (!el.selected || el.type === "resizableGroup")
+    );
 
     // Fixed padding for consistent spacing
     const PADDING = 100;
@@ -232,6 +244,7 @@ const nestSelectedNodes = () => {
       style: {
         width: `${width}px`,
         height: `${height}px`,
+        zIndex: 0,
       },
       data: {
         label: "Group",
@@ -243,6 +256,7 @@ const nestSelectedNodes = () => {
         width,
         height,
       },
+      zIndex: 0,
     };
 
     // Update positions of child nodes relative to the group
@@ -254,18 +268,15 @@ const nestSelectedNodes = () => {
         y: node.position.y - minY + PADDING / 2,
       };
       node.selected = false;
+      node.zIndex = 1;
     });
 
-    // Update elements with the new group, updated child nodes, and preserve edges
-    const nonSelectedNodes = elements.value.filter(
-      (node) =>
-        (!node.selected || node.type === undefined) && !edges.includes(node)
-    );
+    // Update elements array with proper ordering
     elements.value = [
+      ...edges, // Put edges first to ensure proper connection rendering
       ...nonSelectedNodes,
       groupNode,
       ...selectedNodes,
-      ...edges,
     ];
     id++;
   } catch (error) {
@@ -459,4 +470,17 @@ const onNodeDragStop = (event, node) => {
   top: -4px !important;
   left: -4px !important;
 } */
+
+:deep(.vue-flow__edge) {
+  z-index: 0;
+}
+
+:deep(.vue-flow__node) {
+  z-index: 1;
+}
+
+:deep(.vue-flow__node.resizableGroup) {
+  z-index: 0;
+  pointer-events: all;
+}
 </style>
