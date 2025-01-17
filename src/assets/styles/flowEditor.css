@@ -25,9 +25,11 @@
 .vue-flow__node.selected,
 .vue-flow__node-default.selected,
 .vue-flow__node-input.selected,
-.vue-flow__node-output.selected {
-  @apply border-blue-400;
-  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5);
+.vue-flow__node-output.selected,
+.vue-flow__node[data-selected="true"],
+.vue-flow__node[aria-selected="true"] {
+  border: 1px solid #3bf654 !important; /* Blue-500 */
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5) !important;
 }
 
 /* Handle styles */
@@ -104,9 +106,11 @@
   border: 1px solid rgba(16, 185, 129, 0.8);
 }
 
-.vue-flow__node.resizableGroup.selected {
-  border-color: rgba(16, 185, 129, 1);
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4);
+.vue-flow__node.resizableGroup.selected,
+.vue-flow__node.resizableGroup[data-selected="true"],
+.vue-flow__node.resizableGroup[aria-selected="true"] {
+  border: 2px solid #10b981 !important; /* Green-500 */
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.5) !important;
 }
 
 /* Resize controls */
@@ -125,6 +129,14 @@
   height: 8px !important;
   position: absolute !important;
   z-index: 1;
+}
+
+/* Handle nested node selection */
+.vue-flow__node.selected .vue-flow__node,
+.vue-flow__node[data-selected="true"] .vue-flow__node,
+.vue-flow__node[aria-selected="true"] .vue-flow__node {
+  border: 1px solid #05fb90 !important;
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.1) !important;
 }
 
 /* Utility classes */
