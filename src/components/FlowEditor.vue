@@ -6,17 +6,19 @@
     :snap-grid="[16, 16]"
     @dragover="onDragOver"
     @drop="onDrop"
+    @nodeDoubleClick="onNodeDoubleClick"
+    @nodeDragStop="onNodeDragStop"
     class="dark"
     selection-key="Control"
     multi-selection-key="Shift"
-    :pan-on-drag="[1, 2]"
+    :pan-on-drag="false"
     :selection-on-drag="true"
     :nodes-draggable="true"
     :nodes-connectable="true"
     :elements-selectable="true"
     :selection-mode="selectionMode"
     :zoom-on-double-click="false"
-    :pan-on-scroll="true"
+    :pan-on-scroll="false"
   >
     <Background pattern-color="#4B5563" :gap="8" />
     <Controls class="!bg-gray-800 !border-gray-700" />
@@ -170,13 +172,12 @@ const nestSelectedNodes = () => {
       return;
     }
 
-    // Increased padding and spacing
-    const PADDING = 100; // Larger padding for more space
-    const NODE_SPACING = 50; // Additional spacing between nodes
+    // Fixed padding for consistent spacing
+    const PADDING = 50;
     const DEFAULT_NODE_WIDTH = 150;
     const DEFAULT_NODE_HEIGHT = 50;
 
-    // Calculate the bounding box with extra space
+    // Calculate the bounding box
     const minX = Math.min(...selectedNodes.map((node) => node.position.x));
     const minY = Math.min(...selectedNodes.map((node) => node.position.y));
     const maxX = Math.max(
@@ -192,15 +193,15 @@ const nestSelectedNodes = () => {
       )
     );
 
-    // Calculate group dimensions with extra space
-    const groupWidth = maxX - minX + PADDING * 2 + NODE_SPACING;
-    const groupHeight = maxY - minY + PADDING * 2 + NODE_SPACING;
+    // Calculate group dimensions
+    const groupWidth = maxX - minX + PADDING * 2;
+    const groupHeight = maxY - minY + PADDING * 2;
 
-    // Create parent node with larger dimensions
+    // Create parent node
     const parentNode = {
       id: `node-${id}`,
       type: "group",
-      class: "resizable-group",
+      class: "group-node",
       label: "Group",
       position: { x: minX - PADDING, y: minY - PADDING },
       style: {
@@ -210,8 +211,6 @@ const nestSelectedNodes = () => {
         width: `${groupWidth}px`,
         height: `${groupHeight}px`,
         padding: `${PADDING}px`,
-        resize: "both",
-        overflow: "hidden",
         boxSizing: "border-box",
       },
       data: {},
@@ -221,7 +220,6 @@ const nestSelectedNodes = () => {
         width: groupWidth,
         height: groupHeight,
       },
-      resizing: true,
     };
     id++;
 
@@ -235,10 +233,9 @@ const nestSelectedNodes = () => {
           ...node,
           parentNode: parentNode.id,
           extent: "parent",
-          // Adjust position to be relative to parent with extra spacing
           position: {
-            x: node.position.x - minX + PADDING + NODE_SPACING / 2,
-            y: node.position.y - minY + PADDING + NODE_SPACING / 2,
+            x: node.position.x - minX + PADDING,
+            y: node.position.y - minY + PADDING,
           },
           selected: false,
         };
@@ -316,10 +313,8 @@ const nestSelectedNodes = () => {
   pointer-events: none;
 }
 
-:deep(.vue-flow__node.resizable-group) {
-  resize: both;
-  overflow: hidden;
-  min-width: 200px;
+:deep(.vue-flow__node.group-node) {
+  min-width: 100px;
   min-height: 100px;
   box-sizing: border-box;
   border: 1px solid rgba(16, 185, 129, 0.5);
@@ -328,31 +323,11 @@ const nestSelectedNodes = () => {
   padding: 20px;
 }
 
-:deep(.vue-flow__node.resizable-group::after) {
-  content: "";
-  position: absolute;
-  right: 2px;
-  bottom: 2px;
-  width: 12px;
-  height: 12px;
-  cursor: se-resize;
-  background: linear-gradient(
-    135deg,
-    transparent 50%,
-    rgba(16, 185, 129, 0.8) 50%
-  );
-  border-bottom-right-radius: 4px;
-  opacity: var(--resize-handle-opacity);
-  pointer-events: var(--resize-handle-pointer-events);
-  z-index: 10;
-  transition: opacity 0.2s ease;
-}
-
-:deep(.vue-flow__node.resizable-group:hover) {
+:deep(.vue-flow__node.group-node:hover) {
   border: 1px solid rgba(16, 185, 129, 0.8);
 }
 
-:deep(.vue-flow__node.resizable-group.selected) {
+:deep(.vue-flow__node.group-node.selected) {
   border-color: rgba(16, 185, 129, 1);
   box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4);
 }
