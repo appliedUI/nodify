@@ -17,7 +17,24 @@
     :selection-mode="selectionMode"
     :zoom-on-double-click="false"
     :pan-on-scroll="false"
+    :node-types="nodeTypes"
   >
+    <template #node-resizableGroup="nodeProps">
+      <div :style="nodeProps.style">
+        <div class="group-label">{{ nodeProps.data?.label || "Group" }}</div>
+        <NodeResizer
+          :min-width="200"
+          :min-height="100"
+          :is-visible="true"
+          :enable-top-left="false"
+          :enable-top-right="false"
+          :enable-bottom-left="false"
+          :enable-bottom-right="true"
+          :enable-edge-resize="false"
+          :line-style="{ stroke: 'none' }"
+        />
+      </div>
+    </template>
     <Background pattern-color="#4B5563" :gap="8" />
     <Controls class="!bg-gray-800 !border-gray-700" />
     <div>
@@ -47,12 +64,13 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
-import { VueFlow, useVueFlow, SelectionMode } from "@vue-flow/core";
+import { ref, markRaw } from "vue";
+import { VueFlow, useVueFlow, SelectionMode, Position } from "@vue-flow/core";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
+import { NodeResizer } from "@vue-flow/node-resizer";
 import { useCodeStore } from "@/stores/codeStore";
-import nodeTypes from "@/nodeData/nodeTypes.json";
+import nodeTypesData from "@/nodeData/nodeTypes.json";
 
 const vueFlow = useVueFlow();
 const { onConnect, addEdges, project, addNodes, updateNode } = vueFlow;
@@ -64,7 +82,16 @@ const codeStore = useCodeStore();
 
 const selectionMode = ref(SelectionMode.Partial);
 
-// ... rest of the methods moved from App.vue ...
+const nodeTypes = markRaw({
+  resizableGroup: {
+    template: "#node-resizableGroup",
+  },
+  ...Object.entries(nodeTypesData).reduce((acc, [key, value]) => {
+    acc[key] = markRaw(value);
+    return acc;
+  }, {}),
+});
+
 const onDragStart = (event, node) => {
   event.dataTransfer.setData("application/vueflow", node.type);
   event.dataTransfer.effectAllowed = "move";
@@ -78,7 +105,7 @@ const onDragOver = (event) => {
 const onDrop = (event) => {
   const type = event.dataTransfer.getData("application/vueflow") || "default";
   const { x, y } = project({ x: event.clientX, y: event.clientY });
-  const nodeType = nodeTypes.find((n) => n.type === type);
+  const nodeType = nodeTypesData.find((n) => n.type === type);
 
   if (!nodeType) {
     console.warn("No node type found for:", type);
@@ -170,8 +197,11 @@ const nestSelectedNodes = () => {
       return;
     }
 
+    // Get existing edges
+    const edges = elements.value.filter((el) => !el.type || el.type === "edge");
+
     // Fixed padding for consistent spacing
-    const PADDING = 50;
+    const PADDING = 100;
     const DEFAULT_NODE_WIDTH = 150;
     const DEFAULT_NODE_HEIGHT = 50;
 
@@ -191,59 +221,55 @@ const nestSelectedNodes = () => {
       )
     );
 
-    // Calculate group dimensions
-    const groupWidth = maxX - minX + PADDING * 2;
-    const groupHeight = maxY - minY + PADDING * 2;
+    // Create parent group node with calculated dimensions
+    const width = maxX - minX + PADDING;
+    const height = maxY - minY + PADDING;
 
-    // Create parent node
-    const parentNode = {
-      id: `node-${id}`,
-      type: "group",
-      class: "group-node",
-      label: "Group",
-      position: { x: minX - PADDING, y: minY - PADDING },
+    const groupNode = {
+      id: `group-${id}`,
+      type: "resizableGroup",
+      position: { x: minX - PADDING / 2, y: minY - PADDING / 2 },
       style: {
-        backgroundColor: "rgba(16, 185, 129, 0.1)",
-        border: "1px solid rgba(16, 185, 129, 0.5)",
-        borderRadius: "8px",
-        width: `${groupWidth}px`,
-        height: `${groupHeight}px`,
-        padding: `${PADDING}px`,
-        boxSizing: "border-box",
+        width: `${width}px`,
+        height: `${height}px`,
       },
-      data: {},
+      data: {
+        label: "Group",
+        childNodes: selectedNodes.map((node) => node.id),
+      },
       draggable: true,
       selectable: true,
       dimensions: {
-        width: groupWidth,
-        height: groupHeight,
+        width,
+        height,
       },
     };
-    id++;
 
-    // Add the parent node
-    elements.value = [...elements.value, parentNode];
-
-    // Update selected nodes to be children of the new parent
-    elements.value = elements.value.map((node) => {
-      if (node.selected && node.type !== undefined) {
-        return {
-          ...node,
-          parentNode: parentNode.id,
-          extent: "parent",
-          position: {
-            x: node.position.x - minX + PADDING,
-            y: node.position.y - minY + PADDING,
-          },
-          selected: false,
-        };
-      }
-      return node;
+    // Update positions of child nodes relative to the group
+    selectedNodes.forEach((node) => {
+      node.parentNode = groupNode.id;
+      node.extent = "parent";
+      node.position = {
+        x: node.position.x - minX + PADDING / 2,
+        y: node.position.y - minY + PADDING / 2,
+      };
+      node.selected = false;
     });
 
-    updateCodeFromNodes();
+    // Update elements with the new group, updated child nodes, and preserve edges
+    const nonSelectedNodes = elements.value.filter(
+      (node) =>
+        (!node.selected || node.type === undefined) && !edges.includes(node)
+    );
+    elements.value = [
+      ...nonSelectedNodes,
+      groupNode,
+      ...selectedNodes,
+      ...edges,
+    ];
+    id++;
   } catch (error) {
-    console.error("Error nesting nodes:", error);
+    console.error("Error in nestSelectedNodes:", error);
   }
 };
 
@@ -254,6 +280,8 @@ const onNodeDragStop = (event, node) => {
 </script>
 
 <style scoped>
+@import "@vue-flow/node-resizer/dist/style.css";
+
 :deep(.vue-flow__node) {
   @apply bg-gray-800 border-gray-600 text-gray-200 shadow-lg;
 }
@@ -335,6 +363,36 @@ const onNodeDragStop = (event, node) => {
   box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4);
 }
 
+.group-node {
+  position: relative;
+  min-width: 200px;
+  min-height: 100px;
+  background: transparent;
+}
+
+.group-label {
+  position: absolute;
+  top: -25px;
+  left: 10px;
+  font-size: 12px;
+  color: #cccccc;
+  background: rgba(3, 3, 3, 0.8);
+  padding: 2px 6px;
+  border-radius: 4px;
+  z-index: 1;
+}
+
+.group-resizer {
+  border-color: #666 !important;
+}
+
+.group-resizer .handle {
+  background: #fff;
+  border: 1px solid #666;
+  width: 8px;
+  height: 8px;
+}
+
 .pan-toggle-button {
   position: absolute;
   top: 20px;
@@ -358,4 +416,47 @@ const onNodeDragStop = (event, node) => {
   color: white;
   border-color: #10b981;
 }
+
+:deep(.vue-flow__node.resizableGroup) {
+  min-width: 100px;
+  min-height: 100px;
+  box-sizing: border-box;
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  background-color: rgba(16, 185, 129, 0.1);
+  border-radius: 8px;
+  padding: 20px;
+  position: relative;
+}
+
+:deep(.vue-flow__node.resizableGroup:hover) {
+  border: 1px solid rgba(16, 185, 129, 0.8);
+}
+
+:deep(.vue-flow__node.resizableGroup.selected) {
+  border-color: rgba(16, 185, 129, 1);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4);
+}
+
+:deep(.vue-flow__resize-control) {
+  display: none; /* Hide all resize controls by default */
+}
+
+:deep(.vue-flow__resize-control.bottom.right) {
+  display: block; /* Only show bottom-right resize control */
+  bottom: -4px !important;
+  right: -4px !important;
+  border: 1px solid #666 !important;
+  border-radius: 2px !important;
+  background: #fff !important;
+  width: 8px !important;
+  height: 8px !important;
+  position: absolute !important;
+  z-index: 1;
+}
+
+/* Remove or comment out the top-left control styles since we don't need them */
+/* :deep(.vue-flow__resize-control.top.left) {
+  top: -4px !important;
+  left: -4px !important;
+} */
 </style>
