@@ -5,7 +5,7 @@
     :snap-to-grid="true"
     :snap-grid="[16, 16]"
     @dragover="onDragOver"
-    @nodeClick="onNodeClick"
+    @nodeClick="({ node }) => onNodeClick(node)"
     class="dark"
     selection-key="Control"
     multi-selection-key="Shift"
@@ -124,9 +124,12 @@ const updateCodeFromNodes = () => {
 };
 
 // Listen for node clicks and update selectedNodeId
-function onNodeClick(event, node) {
-  codeStore.updateSelectedNodeId(node.data.nodeId);
-}
+const onNodeClick = (nodeData) => {
+  if (nodeData && nodeData.id) {
+    // Update selected node in store
+    codeStore.updateSelectedNodeId(nodeData.id);
+  }
+};
 
 // Watch the store for selection changes and highlight the matching node
 watch(

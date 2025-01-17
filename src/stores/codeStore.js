@@ -14,7 +14,15 @@ export const useCodeStore = defineStore("code", {
       this.lastUpdateTimestamp = Date.now();
     },
     updateSelectedNodeId(id) {
+      if (!id) return;
+      
       this.selectedNodeId = id;
+      // Find the corresponding block
+      const selectedBlock = this.nodeBlocks.find(block => block.id === id);
+      if (selectedBlock) {
+        this.nodeCode = selectedBlock.code;
+        this.lastUpdateTimestamp = Date.now();
+      }
     },
     updateNodeCode(code) {
       this.nodeCode = code;

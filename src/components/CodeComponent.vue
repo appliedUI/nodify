@@ -1,7 +1,8 @@
 <template>
   <div class="p-0 flex h-full" ref="container">
     <div
-      class="coder block rounded-lg bg-gray-900 p-0 overflow-x-auto h-full"
+      class="coder block rounded-lg bg-gray-900 p-0 overflow-x-auto h-full scroll-smooth"
+      ref="coderContainer"
       :style="{ width: `${codeWidth}px` }"
     >
       <div
@@ -10,6 +11,7 @@
         class="code-block p-4 mb-2 rounded cursor-pointer hover:bg-gray-700"
         :class="{ 'bg-black': selectedNodeId === block.id }"
         @click="selectBlock(block.id)"
+        :data-block-id="block.id"
       >
         <div class="text-xs text-gray-100" v-html="block.highlighted"></div>
       </div>
@@ -40,7 +42,7 @@
 <script setup>
 import { useCodeStore } from "@/stores/codeStore";
 import { storeToRefs } from "pinia";
-import { onMounted, watch, ref, computed } from "vue";
+import { onMounted, watch, ref, computed, nextTick } from "vue";
 import ParamsComponent from "@/components/ParamsComponent.vue";
 import CompiledComponent from "@/components/CompiledComponent.vue";
 import hljs from "highlight.js";
@@ -144,10 +146,6 @@ watch(
 // Add block selection handler
 const selectBlock = (id) => {
   codeStore.updateSelectedNodeId(id);
-  console.log(
-    "Selected block:",
-    codeBlocks.value.find((block) => block.id === id)
-  );
 };
 
 // Add this computed property
@@ -157,6 +155,31 @@ const formattedNodeCode = computed(() => {
   );
   return selectedNode?.code || "";
 });
+
+const coderContainer = ref(null);
+
+const scrollToBlock = (id) => {
+  if (!id || !coderContainer.value) return;
+  
+  nextTick(() => {
+    const selectedBlock = coderContainer.value.querySelector(
+      `[data-block-id="${id}"]`
+    );
+    if (selectedBlock) {
+      selectedBlock.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+      });
+    }
+  });
+};
+
+// Replace the existing watcher with this one
+watch(selectedNodeId, (newId) => {
+  if (newId) {
+    scrollToBlock(newId);
+  }
+}, { immediate: true });
 </script>
 
 <style scoped>
@@ -186,5 +209,9 @@ const formattedNodeCode = computed(() => {
 
 .code-block {
   transition: background-color 0.2s ease;
+}
+
+.scroll-smooth {
+  scroll-behavior: smooth;
 }
 </style>
