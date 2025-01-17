@@ -1,0 +1,148 @@
+@import "@vue-flow/node-resizer/dist/style.css";
+
+/* Base node styles */
+.vue-flow__node {
+  @apply bg-gray-800 border border-gray-600 text-gray-200 shadow-lg rounded-md p-2;
+  z-index: 1;
+  min-width: 150px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ensure child nodes inherit styles */
+.vue-flow__node-default,
+.vue-flow__node-input,
+.vue-flow__node-output,
+.vue-flow__node-default.selectable,
+.vue-flow__node-input.selectable,
+.vue-flow__node-output.selectable {
+  @apply bg-gray-800 border border-gray-600 text-gray-200 shadow-lg rounded-md;
+}
+
+/* Selected state for all node types */
+.vue-flow__node.selected,
+.vue-flow__node-default.selected,
+.vue-flow__node-input.selected,
+.vue-flow__node-output.selected {
+  @apply border-blue-400;
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5);
+}
+
+/* Handle styles */
+.vue-flow__handle {
+  @apply border border-gray-700;
+  width: 10px;
+  height: 10px;
+  background: transparent;
+  position: absolute;
+}
+
+.vue-flow__handle.source {
+  @apply bg-green-500;
+  right: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.vue-flow__handle.target {
+  @apply bg-blue-500;
+  left: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Edge styles */
+.vue-flow__edge {
+  z-index: 0;
+}
+
+.vue-flow__edge-path {
+  stroke: #0b8bcb;
+  stroke-width: 2;
+}
+
+.vue-flow__edge.selected .vue-flow__edge-path {
+  stroke: #4299e1;
+  stroke-width: 3;
+}
+
+/* Controls and UI elements */
+.vue-flow__controls button {
+  @apply bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700;
+}
+
+.vue-flow__attribution {
+  @apply bg-transparent text-gray-500;
+}
+
+/* Selection styles */
+.vue-flow__selection,
+.vue-flow__selection-rect {
+  background: rgba(96, 165, 250, 0.1);
+  border: 1px solid rgba(96, 165, 250, 0.5);
+  pointer-events: none;
+}
+
+/* Group node styles */
+.vue-flow__node.resizableGroup {
+  min-width: 100px;
+  min-height: 100px;
+  box-sizing: border-box;
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  background-color: rgba(16, 185, 129, 0.1);
+  border-radius: 8px;
+  padding: 20px;
+  position: relative;
+  z-index: 0;
+  pointer-events: all;
+}
+
+.vue-flow__node.resizableGroup:hover {
+  border: 1px solid rgba(16, 185, 129, 0.8);
+}
+
+.vue-flow__node.resizableGroup.selected {
+  border-color: rgba(16, 185, 129, 1);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4);
+}
+
+/* Resize controls */
+.vue-flow__resize-control {
+  display: none;
+}
+
+.vue-flow__resize-control.bottom.right {
+  display: block;
+  bottom: -4px !important;
+  right: -4px !important;
+  border: 1px solid #666 !important;
+  border-radius: 2px !important;
+  background: #fff !important;
+  width: 8px !important;
+  height: 8px !important;
+  position: absolute !important;
+  z-index: 1;
+}
+
+/* Utility classes */
+.node-toolbox {
+  min-width: 200px;
+}
+
+.draggable-node {
+  user-select: none;
+}
+
+.group-label {
+  position: absolute;
+  top: -25px;
+  left: 10px;
+  font-size: 12px;
+  color: #cccccc;
+  background: rgba(3, 3, 3, 0.8);
+  padding: 2px 6px;
+  border-radius: 4px;
+  z-index: 1;
+}
