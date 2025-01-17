@@ -4,7 +4,15 @@
       class="coder block rounded-lg bg-gray-900 p-4 overflow-x-auto h-full"
       :style="{ width: `${codeWidth}px` }"
     >
-      <div class="text-xs text-gray-100">{{ formattedNodeCode }}</div>
+      <div
+        v-for="(block, index) in codeBlocks"
+        :key="index"
+        class="code-block p-4 mb-2 rounded cursor-pointer hover:bg-gray-700"
+        :class="{ 'bg-black': selectedBlockIndex === index }"
+        @click="selectBlock(index)"
+      >
+        <div class="text-xs text-gray-100">{{ block }}</div>
+      </div>
     </div>
     <div
       class="resize-handle bg-gray-700 hover:bg-gray-600 w-1 h-full cursor-col-resize"
@@ -32,7 +40,7 @@
 <script setup>
 import { useCodeStore } from "@/stores/codeStore";
 import { storeToRefs } from "pinia";
-import { onMounted, watch, ref } from "vue";
+import { onMounted, watch, ref, computed } from "vue";
 import ParamsComponent from "@/components/ParamsComponent.vue";
 import CompiledComponent from "@/components/CompiledComponent.vue";
 
@@ -113,13 +121,25 @@ onMounted(() => {
   console.log("CodeComponent mounted, current code:", formattedNodeCode.value);
 });
 
+// Add new reactive variables
+const codeBlocks = ref([]);
+const selectedBlockIndex = ref(null);
+
+// Split formattedNodeCode into blocks whenever it changes
 watch(
   formattedNodeCode,
   (newCode) => {
-    console.log("Code updated in component:", newCode);
+    codeBlocks.value = newCode.split("\n\n"); // Split by double newlines
+    console.log("Code blocks updated:", codeBlocks.value);
   },
   { immediate: true }
 );
+
+// Add block selection handler
+const selectBlock = (index) => {
+  selectedBlockIndex.value = index;
+  console.log("Selected block:", codeBlocks.value[index]);
+};
 </script>
 
 <style scoped>
@@ -145,5 +165,9 @@ watch(
 
 .resize-handle:hover {
   background-color: #4a5568;
+}
+
+.code-block {
+  transition: background-color 0.2s ease;
 }
 </style>

@@ -74,7 +74,7 @@ const onDrop = (event) => {
   const newNode = {
     id: `node-${id}`,
     type,
-    label: `${type.charAt(0).toUpperCase() + type.slice(1)} Node ${id}`,
+    label: `${type.charAt(0).toUpperCase() + type.slice(1)}`,
     position,
     draggable: true,
     data: {
