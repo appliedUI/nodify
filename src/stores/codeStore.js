@@ -5,8 +5,8 @@ export const useCodeStore = defineStore("code", {
     nodeCode: "",
     lastUpdateTimestamp: null,
     selectedNodeId: null, // new
-    nodeBlocks: [], 
-    block: null      // new
+    nodeBlocks: [],
+    block: null, // new
   }),
   actions: {
     updateNodeBlocks(blocks) {
@@ -16,13 +16,17 @@ export const useCodeStore = defineStore("code", {
     },
     updateSelectedNodeId(id) {
       if (!id) return;
-      
+
       this.selectedNodeId = id;
       // Find the corresponding block
-      const selectedBlock = this.nodeBlocks.find(block => block.id === id);
+      const selectedBlock = this.nodeBlocks.find((block) => block.id === id);
       if (selectedBlock) {
         this.nodeCode = selectedBlock.code;
-        this.block = selectedBlock
+        this.block = {
+          ...selectedBlock, // Spread all properties including agentPrompt
+          code: selectedBlock.code,
+          id: selectedBlock.id,
+        };
         this.lastUpdateTimestamp = Date.now();
       }
     },

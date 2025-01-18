@@ -21,7 +21,7 @@
   >
     <template #node-resizableGroup="nodeProps">
       <div :style="nodeProps.style">
-        <div class="group-label">{{ nodeProps.data?.label || 'Group' }}</div>
+        <div class="group-label">{{ nodeProps.data?.label || "Group" }}</div>
         <NodeResizer
           :min-width="200"
           :min-height="100"
@@ -64,74 +64,76 @@
 </template>
 
 <script setup>
-import { ref, markRaw, watch } from 'vue'
-import { VueFlow, useVueFlow, SelectionMode, Position } from '@vue-flow/core'
-import { Background } from '@vue-flow/background'
-import { Controls } from '@vue-flow/controls'
-import { NodeResizer } from '@vue-flow/node-resizer'
-import { useCodeStore } from '@/stores/codeStore'
-import nodeTypesData from '@/nodeData/nodeTypes.json'
-import '@/assets/styles/flowEditor.css'
+import { ref, markRaw, watch } from "vue";
+import { VueFlow, useVueFlow, SelectionMode, Position } from "@vue-flow/core";
+import { Background } from "@vue-flow/background";
+import { Controls } from "@vue-flow/controls";
+import { NodeResizer } from "@vue-flow/node-resizer";
+import { useCodeStore } from "@/stores/codeStore";
+import nodeTypesData from "@/nodeData/nodeTypes.json";
+import "@/assets/styles/flowEditor.css";
 
 // Constants
-const GRID_SIZE = 16
-const DEFAULT_NODE_WIDTH = 150
-const DEFAULT_NODE_HEIGHT = 50
-const PADDING = 100
+const GRID_SIZE = 16;
+const DEFAULT_NODE_WIDTH = 150;
+const DEFAULT_NODE_HEIGHT = 50;
+const PADDING = 100;
 
 // Composable setup
-const vueFlow = useVueFlow()
-const { onConnect, addEdges, project, addNodes, updateNode } = vueFlow
-const elements = ref([])
-const selectionMode = ref(SelectionMode.Partial)
-const codeStore = useCodeStore()
-let id = 1
+const vueFlow = useVueFlow();
+const { onConnect, addEdges, project, addNodes, updateNode } = vueFlow;
+const elements = ref([]);
+const selectionMode = ref(SelectionMode.Partial);
+const codeStore = useCodeStore();
+let id = 1;
 
 // Node types initialization
 const nodeTypes = markRaw({
-  resizableGroup: { template: '#node-resizableGroup' },
+  resizableGroup: { template: "#node-resizableGroup" },
   ...Object.fromEntries(
     Object.entries(nodeTypesData).map(([key, value]) => [key, markRaw(value)])
   ),
-})
+});
 
 // Helper functions
 const createNode = (type, position, nodeType) => ({
-  id: nodeType?.id, // <-- use nodeType's UUID
+  id: nodeType?.id,
   type,
   label: nodeType?.label || `${type.charAt(0).toUpperCase() + type.slice(1)}`,
+  agentPrompt: nodeType?.agentPrompt || "",
   position,
   data: {
-    code: nodeType?.code || '',
-    nodeId: nodeType?.id, // store the UUID again
+    code: nodeType?.code || "",
+    nodeId: nodeType?.id,
+    agentPrompt: nodeType?.agentPrompt || "",
   },
   draggable: true,
-  sourcePosition: 'right',
-  targetPosition: 'left',
-})
+  sourcePosition: "right",
+  targetPosition: "left",
+});
 
-const snapToGrid = (pos) => Math.round(pos / GRID_SIZE) * GRID_SIZE
+const snapToGrid = (pos) => Math.round(pos / GRID_SIZE) * GRID_SIZE;
 
 const updateCodeFromNodes = () => {
   const nodeBlocks = elements.value
     .filter((el) => el.type && el.data?.nodeId)
     .map((node) => ({
       id: node.data.nodeId,
-      code: node.data.code.trim() || '',
-      type: node.type,
+      code: node.data.code.trim() || "",
+      agentPrompt: node.data.agentPrompt || "",
       label: node.label,
     }))
-    .filter((block) => block.code !== '')
-  codeStore.updateNodeBlocks(nodeBlocks)
-}
+    .filter((block) => block.code !== "");
+  codeStore.updateNodeBlocks(nodeBlocks);
+};
 
 // Listen for node clicks and update selectedNodeId
 const onNodeClick = (nodeData) => {
   if (nodeData && nodeData.id) {
     // Update selected node in store
-    codeStore.updateSelectedNodeId(nodeData.id)
+    codeStore.updateSelectedNodeId(nodeData.id);
   }
-}
+};
 
 // Watch the store for selection changes and highlight the matching node
 watch(
@@ -139,107 +141,108 @@ watch(
   (newId) => {
     elements.value.forEach((el) => {
       if (el.type) {
-        el.selected = el.data?.nodeId === newId
+        el.selected = el.data?.nodeId === newId;
       }
-    })
+    });
   }
-)
+);
 
 const addNode = (nodeType) => {
-  const lastNode = elements.value[elements.value.length - 1]
+  const lastNode = elements.value[elements.value.length - 1];
   const position = {
     x: lastNode ? lastNode.position.x + 180 : 200,
     y: lastNode ? lastNode.position.y : 40,
-  }
+  };
 
   const newNode = createNode(nodeType.type, position, {
     id: nodeType.id,
     label: nodeType.label,
     code: nodeType.code,
     type: nodeType.type,
-  })
+    agentPrompt: nodeType.agentPrompt,
+  });
 
-  elements.value = [...elements.value, newNode]
-  updateCodeFromNodes()
-}
+  elements.value = [...elements.value, newNode];
+  updateCodeFromNodes();
+};
 
 const nestSelectedNodes = () => {
   try {
     const selectedNodes = elements.value.filter(
-      (el) => el.selected && el.position && el.type !== 'resizableGroup'
-    )
+      (el) => el.selected && el.position && el.type !== "resizableGroup"
+    );
 
     if (selectedNodes.length < 2) {
-      console.warn('Select at least 2 nodes to nest')
-      return
+      console.warn("Select at least 2 nodes to nest");
+      return;
     }
 
     const edges = elements.value
       .filter((el) => !el.position)
-      .map((edge) => ({ ...edge, zIndex: 2 }))
+      .map((edge) => ({ ...edge, zIndex: 2 }));
 
     const nonSelectedNodes = elements.value.filter(
-      (el) => el.position && (!el.selected || el.type === 'resizableGroup')
-    )
+      (el) => el.position && (!el.selected || el.type === "resizableGroup")
+    );
 
     // Calculate bounding box
-    const positions = selectedNodes.map((node) => node.position)
+    const positions = selectedNodes.map((node) => node.position);
     const dimensions = selectedNodes.map(
       (node) =>
         node.dimensions || {
           width: DEFAULT_NODE_WIDTH,
           height: DEFAULT_NODE_HEIGHT,
         }
-    )
+    );
 
-    const minX = Math.min(...positions.map((pos) => pos.x))
-    const minY = Math.min(...positions.map((pos) => pos.y))
+    const minX = Math.min(...positions.map((pos) => pos.x));
+    const minY = Math.min(...positions.map((pos) => pos.y));
     const maxX = Math.max(
       ...positions.map((pos, i) => pos.x + dimensions[i].width)
-    )
+    );
     const maxY = Math.max(
       ...positions.map((pos, i) => pos.y + dimensions[i].height)
-    )
+    );
 
-    const width = maxX - minX + PADDING
-    const height = maxY - minY + PADDING
+    const width = maxX - minX + PADDING;
+    const height = maxY - minY + PADDING;
 
     const groupNode = {
       id: `group-${id++}`,
-      type: 'resizableGroup',
+      type: "resizableGroup",
       position: { x: minX - PADDING / 2, y: minY - PADDING / 2 },
       style: { width: `${width}px`, height: `${height}px`, zIndex: 0 },
       data: {
-        label: 'Group',
+        label: "Group",
         childNodes: selectedNodes.map((node) => node.id),
       },
       draggable: true,
       selectable: true,
       dimensions: { width, height },
       zIndex: 0,
-    }
+    };
 
     selectedNodes.forEach((node) => {
-      node.parentNode = groupNode.id
-      node.extent = 'parent'
+      node.parentNode = groupNode.id;
+      node.extent = "parent";
       node.position = {
         x: node.position.x - minX + PADDING / 2,
         y: node.position.y - minY + PADDING / 2,
-      }
-      node.selected = false
-      node.zIndex = 1
-    })
+      };
+      node.selected = false;
+      node.zIndex = 1;
+    });
 
     elements.value = [
       ...edges,
       ...nonSelectedNodes,
       groupNode,
       ...selectedNodes,
-    ]
+    ];
   } catch (error) {
-    console.error('Error in nestSelectedNodes:', error)
+    console.error("Error in nestSelectedNodes:", error);
   }
-}
+};
 
 onConnect((params) => {
   addEdges([
@@ -248,16 +251,16 @@ onConnect((params) => {
       source: params.source,
       target: params.target,
       animated: true,
-      style: { stroke: '#555', strokeWidth: 2 },
+      style: { stroke: "#555", strokeWidth: 2 },
       zIndex: 2,
     },
-  ])
-})
+  ]);
+});
 
 const onDragOver = (event) => {
-  event.preventDefault()
-  event.dataTransfer.dropEffect = 'move'
-}
+  event.preventDefault();
+  event.dataTransfer.dropEffect = "move";
+};
 </script>
 
 <style scoped>
