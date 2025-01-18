@@ -5,7 +5,8 @@ export const useCodeStore = defineStore("code", {
     nodeCode: "",
     lastUpdateTimestamp: null,
     selectedNodeId: null, // new
-    nodeBlocks: [],       // new
+    nodeBlocks: [], 
+    block: null      // new
   }),
   actions: {
     updateNodeBlocks(blocks) {
@@ -21,6 +22,7 @@ export const useCodeStore = defineStore("code", {
       const selectedBlock = this.nodeBlocks.find(block => block.id === id);
       if (selectedBlock) {
         this.nodeCode = selectedBlock.code;
+        this.block = selectedBlock
         this.lastUpdateTimestamp = Date.now();
       }
     },

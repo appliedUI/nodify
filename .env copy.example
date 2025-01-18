@@ -1,0 +1,4 @@
+# OpenAI API Configuration
+VITE_OPENAI_API_KEY=your_openai_api_key_here
+
+# Other environment variables can be added below
