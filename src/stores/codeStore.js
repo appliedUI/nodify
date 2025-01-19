@@ -7,11 +7,13 @@ export const useCodeStore = defineStore("code", {
     selectedNodeId: null, // new
     nodeBlocks: [],
     block: null, // new
+    agentPrompt: "",
   }),
   actions: {
     updateNodeBlocks(blocks) {
       this.nodeBlocks = blocks;
       this.nodeCode = blocks.map((b) => b.code).join("\n\n");
+      this.agentPrompt = blocks.map((b) => b.agentPrompt).join("\n\n");
       this.lastUpdateTimestamp = Date.now();
     },
     updateSelectedNodeId(id) {

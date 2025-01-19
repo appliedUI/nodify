@@ -105,7 +105,7 @@ const createNode = (type, position, nodeType) => ({
   data: {
     code: nodeType?.code || "",
     nodeId: nodeType?.id,
-    agentPrompt: nodeType?.agentPrompt || "",
+    agentPrompt: nodeType?.agentPrompt || "", // Add this line to include new fields
   },
   draggable: true,
   sourcePosition: "right",
@@ -120,7 +120,7 @@ const updateCodeFromNodes = () => {
     .map((node) => ({
       id: node.data.nodeId,
       code: node.data.code.trim() || "",
-      agentPrompt: node.data.agentPrompt || "",
+      agentPrompt: node.data.agentPrompt || "", // Add this line to include fields
       label: node.label,
     }))
     .filter((block) => block.code !== "");
@@ -159,7 +159,7 @@ const addNode = (nodeType) => {
     label: nodeType.label,
     code: nodeType.code,
     type: nodeType.type,
-    agentPrompt: nodeType.agentPrompt,
+    agentPrompt: nodeType.agentPrompt, // Add this line to include agentPrompt
   });
 
   elements.value = [...elements.value, newNode];
