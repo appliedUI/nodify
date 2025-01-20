@@ -91,7 +91,12 @@ let id = 1;
 const nodeTypes = markRaw({
   resizableGroup: { template: "#node-resizableGroup" },
   ...Object.fromEntries(
-    Object.entries(nodeTypesData).map(([key, value]) => [key, markRaw(value)])
+    Object.entries(nodeTypesData).map(([key, value]) => {
+      if (!value.template) {
+        value.template = `#node-${key}`;
+      }
+      return [key, markRaw(value)];
+    })
   ),
 });
 

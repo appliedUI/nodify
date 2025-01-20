@@ -273,6 +273,15 @@ const initEditor = async () => {
     },
   });
 
+  // Set editor font settings
+  monaco.editor.setTheme("dark-modern");
+  monaco.editor.remeasureFonts();
+  monaco.editor.EditorOptions.fontSize.defaultValue = 10;
+  monaco.editor.EditorOptions.fontFamily.defaultValue =
+    "'Fira Code', 'Menlo', 'Consolas', monospace";
+  monaco.editor.EditorOptions.lineHeight.defaultValue = 20;
+  monaco.editor.EditorOptions.letterSpacing.defaultValue = 0.5;
+
   // Create editor with dark theme
   editorInstance = monaco.editor.create(monacoEditor.value, {
     value: selectedBlock.value?.code || "",
@@ -281,7 +290,7 @@ const initEditor = async () => {
     automaticLayout: true,
     minimap: { enabled: false },
     scrollBeyondLastLine: false,
-    fontSize: 14,
+    fontSize: 12,
     lineNumbers: "on",
     roundedSelection: false,
     scrollbar: {
