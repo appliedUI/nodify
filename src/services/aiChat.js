@@ -12,23 +12,9 @@ const openai = new OpenAI({
  * @returns {Object} System message object
  */
 const buildSystemMessage = (agentConfig, snippet) => {
-  const baseContent = `You are an AI code reviewer specialized in ${
-    snippet.type || "general programming"
-  }. 
-Your task is to analyze code snippets and provide helpful insights.
-
-Key focus areas:
-- Code quality and best practices
-- Potential bugs or issues
-- Performance considerations
-- Security implications
-- Suggestions for improvement
-
-${agentConfig.additionalInstructions || ""}`;
-
   return {
     role: "system",
-    content: baseContent,
+    content: `You are an AI code reviewer. ${snippet.agentPrompt}`,
   };
 };
 
@@ -40,15 +26,8 @@ ${agentConfig.additionalInstructions || ""}`;
 const buildUserMessage = (snippet) => {
   return {
     role: "user",
-    content: `Code Type: ${snippet.type}
-Label: ${snippet.label}
-Description: ${snippet.description}
-
-Code:
-${snippet.code}
-
-Review Request:
-${snippet.agentPrompt}`,
+    content: `Code:
+${snippet.code}`,
   };
 };
 
@@ -117,7 +96,7 @@ export const sendFollowUpMessage = async (
     ];
 
     const completion = await openai.chat.completions.create({
-      model: agentConfig.model || "gpt-3.5-turbo",
+      model: agentConfig.model || "gpt-4o-mini",
       messages,
       temperature: agentConfig.temperature ?? 0.7,
       max_tokens: agentConfig.maxTokens ?? 1000,

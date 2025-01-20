@@ -81,7 +81,7 @@ const scrollToBottom = async () => {
 // Watch chat history for changes
 watch(chatHistory, async () => {
   await scrollToBottom()
-}, { deep: true })
+}, { deep: true, immediate: true })
 
 // Watch for node changes to initialize code review
 watch(
@@ -140,6 +140,7 @@ const safeChatHistory = computed(() => {
 .messages-container {
   scrollbar-width: thin;
   scrollbar-color: #4A5568 #2D3748;
+
 }
 
 .messages-container::-webkit-scrollbar {
