@@ -17,7 +17,7 @@
       @mousedown="startResize('params')"
     ></div>
     <div
-      class="params-container bg-gray-800 p-4 overflow-x-auto h-full"
+      class="params-container bg-gray-800 px-4 py-0 overflow-x-auto h-full"
       :style="{ width: `${paramsWidth}px` }"
     >
       <ParamsComponent />
@@ -27,7 +27,7 @@
       @mousedown="startResize('compiled')"
     ></div>
     <div
-      class="compiled-container bg-gray-800 p-4 overflow-x-auto h-full"
+      class="compiled-container bg-gray-800 px-4 py-0 overflow-x-auto h-full"
       :style="{ width: `${compiledWidth}px` }"
     >
       <CompiledComponent />
@@ -285,7 +285,7 @@ const initEditor = async () => {
   // Create editor with dark theme
   editorInstance = monaco.editor.create(monacoEditor.value, {
     value: selectedBlock.value?.code || "",
-    language: "javascript",
+    language: "python",
     theme: "dark-modern",
     automaticLayout: true,
     minimap: { enabled: false },

@@ -1,49 +1,49 @@
 <template>
   <div class="params-container text-xs" v-if="block">
-    <!-- Eye Icon Button -->
-    <button
-      @click="togglePreview"
-      class="fixed right-4 top-4 z-50 p-2 bg-gray-800 rounded-full hover:bg-gray-700 transition-colors"
+    <!-- Tab System -->
+    <div
+      class="text-sm font-medium text-center text-gray-500 dark:text-gray-400 dark:border-gray-700"
     >
-      <EyeIcon class="w-6 h-6 text-gray-300" />
-    </button>
+      <ul class="flex flex-wrap -mb-px">
+        <li class="me-2">
+          <button
+            @click="activeTab = 'chat'"
+            :class="{
+              'text-blue-600 border-blue-600 dark:text-blue-500 dark:border-blue-500':
+                activeTab === 'chat',
+              'border-transparent hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300':
+                activeTab !== 'chat',
+            }"
+            class="inline-block p-2 border-b-2 rounded-t-lg"
+          >
+            Chat
+          </button>
+        </li>
+        <li class="me-2">
+          <button
+            @click="activeTab = 'connections'"
+            :class="{
+              'text-blue-600 border-blue-600 dark:text-blue-500 dark:border-blue-500':
+                activeTab === 'connections',
+              'border-transparent hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300':
+                activeTab !== 'connections',
+            }"
+            class="inline-block p-2 border-b-2 rounded-t-lg"
+          >
+            Connections
+          </button>
+        </li>
+      </ul>
+    </div>
 
-    <!-- Preview Side Panel -->
-    <div class="fixed inset-0 z-40" v-if="showPreview" @click="togglePreview">
-      <!-- Overlay -->
-      <div class="absolute inset-0 bg-black/30"></div>
-
-      <!-- Panel Content -->
-      <div
-        class="absolute right-0 top-0 h-full w-96 bg-gray-800 shadow-lg transform transition-transform duration-300"
-        :class="{
-          'translate-x-0': showPreview,
-          'translate-x-full': !showPreview,
-        }"
-        @click.stop
-      >
-        <div class="p-6">
-          <h2 class="text-lg font-bold mb-4 text-gray-100">Preview</h2>
-          <div v-if="block.agentPrompt" class="mb-6">
-            <h3 class="font-bold text-gray-300 mb-2">Agent Prompt:</h3>
-            <p class="text-gray-400">{{ block.agentPrompt }}</p>
-          </div>
-          <div v-if="block.code" class="mb-6">
-            <h3 class="font-bold text-gray-300 mb-2">Code:</h3>
-            <pre class="text-gray-400">{{ block.code }}</pre>
-          </div>
-        </div>
+    <!-- Tab Content -->
+    <div class="mt-4">
+      <div v-if="activeTab === 'connections'">
+        <ConnectionsComponent />
       </div>
-    </div>
-
-    <!-- Existing Content -->
-    <div v-if="block.agentPrompt">
-      <h3 class="font-bold">Agent Prompt:</h3>
-      <p>{{ block.agentPrompt }}</p>
-    </div>
-    <div v-if="block.code">
-      <h3 class="font-bold">Code:</h3>
-      <pre>{{ block.code }}</pre>
+      <div v-if="activeTab === 'chat'">
+        <ChatComponent />
+      </div>
     </div>
   </div>
 </template>
@@ -51,18 +51,15 @@
 <script setup>
 import { computed, ref } from "vue";
 import { useCodeStore } from "@/stores/codeStore";
-import { EyeIcon } from "@heroicons/vue/24/outline";
+import ConnectionsComponent from "./ConnectionsComponent.vue";
+import ChatComponent from "./ChatComponent.vue";
 
 const codeStore = useCodeStore();
-const showPreview = ref(false);
-
 const nodeCode = computed(() => codeStore.nodeCode);
 const nodeBlocks = computed(() => codeStore.nodeBlocks);
 const block = computed(() => codeStore.block);
 
-const togglePreview = () => {
-  showPreview.value = !showPreview.value;
-};
+const activeTab = ref("chat"); // Default to connections tab
 </script>
 
 <style scoped>
