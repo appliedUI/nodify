@@ -48,11 +48,11 @@ import {
   onBeforeMount,
 } from "vue";
 import * as monaco from "monaco-editor";
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
-import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
-import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker';
-import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker';
-import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
+import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
+import jsonWorker from "monaco-editor/esm/vs/language/json/json.worker?worker";
+import cssWorker from "monaco-editor/esm/vs/language/css/css.worker?worker";
+import htmlWorker from "monaco-editor/esm/vs/language/html/html.worker?worker";
+import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
 import ParamsComponent from "@/components/ParamsComponent.vue";
 import CompiledComponent from "@/components/CompiledComponent.vue";
 import hljs from "highlight.js";
@@ -63,20 +63,20 @@ onBeforeMount(() => {
   // @ts-ignore
   self.MonacoEnvironment = {
     getWorker(_, label) {
-      if (label === 'json') {
+      if (label === "json") {
         return new jsonWorker();
       }
-      if (label === 'css' || label === 'scss' || label === 'less') {
+      if (label === "css" || label === "scss" || label === "less") {
         return new cssWorker();
       }
-      if (label === 'html' || label === 'handlebars' || label === 'razor') {
+      if (label === "html" || label === "handlebars" || label === "razor") {
         return new htmlWorker();
       }
-      if (label === 'typescript' || label === 'javascript') {
+      if (label === "typescript" || label === "javascript") {
         return new tsWorker();
       }
       return new editorWorker();
-    }
+    },
   };
 });
 
@@ -86,7 +86,7 @@ const { nodeBlocks, selectedNodeId } = storeToRefs(codeStore);
 // Add computed property for selectedBlock
 const selectedBlock = computed(() => {
   if (!selectedNodeId.value) return null;
-  return nodeBlocks.value.find(block => block.id === selectedNodeId.value);
+  return nodeBlocks.value.find((block) => block.id === selectedNodeId.value);
 });
 
 // Width configuration variables
@@ -201,7 +201,7 @@ watch(
   selectedBlock,
   async (newVal) => {
     await nextTick();
-    
+
     if (!editorInstance) {
       await initEditor();
       return;
@@ -210,15 +210,15 @@ watch(
     if (newVal) {
       const currentValue = editorInstance.getValue();
       const newCode = newVal.code || "";
-      
+
       if (newCode !== currentValue) {
         editorInstance.setValue(newCode);
-        
+
         // Force layout update and focus
         await nextTick();
         editorInstance.layout();
         editorInstance.focus();
-        
+
         // Reset undo stack to prevent undoing to previous node's content
         editorInstance.getModel()?.pushStackElement();
       }
@@ -234,16 +234,50 @@ const initEditor = async () => {
   await nextTick();
   if (!monacoEditor.value) return;
 
-  // Dispose existing editor if it exists
-  if (editorInstance) {
-    editorInstance.dispose();
-  }
+  // Ensure theme is defined
+  monaco.editor.defineTheme("dark-modern", {
+    base: "vs-dark",
+    inherit: true,
+    rules: [
+      { token: "comment", foreground: "6A9955" },
+      { token: "keyword", foreground: "C586C0" },
+      { token: "number", foreground: "B5CEA8" },
+      { token: "string", foreground: "CE9178" },
+      { token: "type", foreground: "4EC9B0" },
+      { token: "delimiter", foreground: "D4D4D4" },
+      { token: "operator", foreground: "D4D4D4" },
+      { token: "identifier", foreground: "9CDCFE" },
+      { token: "function", foreground: "DCDCAA" },
+      { token: "variable", foreground: "9CDCFE" },
+      { token: "parameter", foreground: "9CDCFE" },
+      { token: "property", foreground: "9CDCFE" },
+    ],
+    colors: {
+      "editor.background": "#1E1E1E",
+      "editor.foreground": "#D4D4D4",
+      "editorCursor.foreground": "#AEAFAD",
+      "editor.lineHighlightBackground": "#2A2D2E",
+      "editor.selectionBackground": "#264F78",
+      "editor.inactiveSelectionBackground": "#3A3D41",
+      "editorIndentGuide.background": "#404040",
+      "editorIndentGuide.activeBackground": "#707070",
+      "editor.selectionHighlightBorder": "#51504F",
+      "editor.lineHighlightBorder": "#2A2D2E",
+      "editorLineNumber.foreground": "#858585",
+      "editorLineNumber.activeForeground": "#C6C6C6",
+      "editorGutter.background": "#1E1E1E",
+      "editorWidget.background": "#252526",
+      "editorWidget.border": "#454545",
+      "editorHoverWidget.background": "#252526",
+      "editorHoverWidget.border": "#454545",
+    },
+  });
 
-  // Create editor with improved configuration
+  // Create editor with dark theme
   editorInstance = monaco.editor.create(monacoEditor.value, {
     value: selectedBlock.value?.code || "",
     language: "javascript",
-    theme: "my-dark-theme",
+    theme: "dark-modern",
     automaticLayout: true,
     minimap: { enabled: false },
     scrollBeyondLastLine: false,
@@ -254,7 +288,7 @@ const initEditor = async () => {
       vertical: "auto",
       horizontal: "auto",
     },
-    fixedOverflowWidgets: true, // Helps with tooltips
+    fixedOverflowWidgets: true,
     wordWrap: "on",
     wrappingStrategy: "advanced",
   });
