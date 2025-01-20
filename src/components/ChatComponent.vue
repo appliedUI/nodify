@@ -13,6 +13,16 @@
         ]"
       >
         <div class="message-content text-sm">
+          <template v-if="message.role === 'assistant' && typeof message.content === 'object'">
+            <div :class="['message-type', `type-${message.content.type}`]">
+              {{ message.content.message }}
+            </div>
+            <ul v-if="message.content.details?.length" class="mt-2 list-disc pl-4">
+              <li v-for="(detail, idx) in message.content.details" :key="idx">
+                {{ detail }}
+              </li>
+            </ul>
+          </template>
           <pre v-if="message.role === 'system' && message.content" 
                class="whitespace-pre-wrap">{{ message.content }}</pre>
           <pre v-else-if="message.role === 'assistant' && message.content && message.content.includes('```')"
@@ -179,5 +189,25 @@ textarea {
 textarea:focus {
   outline: none;
   ring: 2px solid #3B82F6;
+}
+
+.message-type {
+  font-weight: 500;
+}
+
+.type-info {
+  color: #3B82F6;
+}
+
+.type-warning {
+  color: #F59E0B;
+}
+
+.type-error {
+  color: #EF4444;
+}
+
+.type-success {
+  color: #10B981;
 }
 </style>

@@ -135,7 +135,13 @@ export const sendAgentMessage = async (agentConfig, userPrompt) => {
     console.log("[SERVICE] Building system message for chat");
     const systemMessage = {
       role: "system",
-      content: `You are ${agentConfig.name}, an AI assistant focused on helping users with their code and technical questions.`,
+      content: `You are ${agentConfig.name}, an AI assistant focused on helping users with their code and technical questions. 
+                Format your responses as JSON with the following structure:
+                {
+                  "message": "Your main response message",
+                  "type": "info|warning|error|success",
+                  "details": ["Additional details or suggestions if any"]
+                }`,
     };
 
     console.log("[SERVICE] Sending chat message to OpenAI", {
@@ -152,11 +158,12 @@ export const sendAgentMessage = async (agentConfig, userPrompt) => {
 
     const messages = [systemMessage, userMessage];
     const response = await openai.chat.completions.create({
-      model: agentConfig.model,
+      model: agentConfig.model || "gpt-4o-mini",
       messages: messages,
       temperature: agentConfig.temperature,
       max_tokens: agentConfig.maxTokens,
       top_p: agentConfig.topP,
+      response_format: { type: "json_object" }
     });
 
     console.log("[SERVICE] Received OpenAI chat response", {
@@ -164,8 +171,10 @@ export const sendAgentMessage = async (agentConfig, userPrompt) => {
       responseLength: response.choices[0].message.content.length,
     });
 
+    const jsonResponse = JSON.parse(response.choices[0].message.content);
+
     return {
-      response: response.choices[0].message.content,
+      response: jsonResponse,
       usage: response.usage,
       agentId: agentConfig.id,
     };
