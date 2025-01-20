@@ -1,7 +1,7 @@
 <template>
   <div class="chat-container flex flex-col h-full">
-    <!-- Messages container with flex-grow and proper scrolling -->
-    <div class="messages-container flex-1 overflow-y-auto p-4 space-y-4">
+    <!-- Messages container with ref -->
+    <div ref="messagesContainer" class="messages-container flex-1 overflow-y-auto p-4 space-y-4">
       <div
         v-for="(message, index) in chatHistory"
         :key="index"
@@ -55,7 +55,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, nextTick } from 'vue'
 import { useCodeStore } from '@/stores/codeStore'
 import { useAIStore } from '@/stores/aiChatStore'
 
@@ -67,6 +67,21 @@ const block = computed(() => codeStore.block)
 const currentMessage = ref('')
 const isLoading = computed(() => aiStore.isLoading)
 const chatHistory = computed(() => aiStore.getChatHistory)
+
+const messagesContainer = ref(null)
+
+const scrollToBottom = async () => {
+  await nextTick()
+  const lastMessage = messagesContainer.value?.querySelector('.message:last-child')
+  if (lastMessage) {
+    lastMessage.scrollIntoView({ behavior: 'smooth' })
+  }
+}
+
+// Watch chat history for changes
+watch(chatHistory, async () => {
+  await scrollToBottom()
+}, { deep: true })
 
 // Watch for node changes to initialize code review
 watch(
@@ -89,6 +104,7 @@ const sendMessage = async () => {
       await aiStore.sendMessage(currentMessage.value)
       console.log('[CLIENT] Message sent successfully')
       currentMessage.value = ''
+      await scrollToBottom() // Scroll after sending message
     } catch (error) {
       console.error('[CLIENT] Error sending message:', error)
       throw error
