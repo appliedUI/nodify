@@ -40,8 +40,7 @@ ${agentConfig.additionalInstructions || ""}`;
 const buildUserMessage = (snippet) => {
   return {
     role: "user",
-    content: `
-Code Type: ${snippet.type}
+    content: `Code Type: ${snippet.type}
 Label: ${snippet.label}
 Description: ${snippet.description}
 
@@ -49,8 +48,7 @@ Code:
 ${snippet.code}
 
 Review Request:
-${snippet.prompt}
-    `.trim(),
+${snippet.agentPrompt}`,
   };
 };
 
@@ -64,6 +62,7 @@ export const reviewCodeSnippet = async (agentConfig, snippet) => {
   try {
     const systemMessage = buildSystemMessage(agentConfig, snippet);
     const userMessage = buildUserMessage(snippet);
+
     const messages = [systemMessage, userMessage];
 
     const completion = await openai.chat.completions.create({
@@ -144,9 +143,7 @@ export const sendAgentMessage = async (agentConfig, userPrompt) => {
     // Define system message that sets the "persona" or context for the agent
     const systemMessage = {
       role: "system",
-      content: `You are a helpful AI assistant named "${
-        agentConfig.name || "Agent"
-      }". Follow best practices, be clear, and adhere to the user's context.`,
+      content: `You are ${agentConfig.name}, an AI assistant focused on helping users with their code and technical questions.`,
     };
 
     // The user's prompt as a single message
@@ -156,24 +153,21 @@ export const sendAgentMessage = async (agentConfig, userPrompt) => {
     };
 
     // Combine messages for the conversation
-    const messages = [
-      { role: "system", content: systemMessage },
-      { role: "user", content: userPrompt },
-    ];
+    const messages = [systemMessage, userMessage];
 
     // Call OpenAI Chat Completion endpoint
-    const completion = await openai.chat.completions.create({
-      model: agentConfig.model || "gpt-3.5-turbo",
-      messages,
-      temperature: agentConfig.temperature ?? 0.7,
-      max_tokens: agentConfig.maxTokens ?? 1000,
-      top_p: agentConfig.topP ?? 1.0,
+    const response = await openai.chat.completions.create({
+      model: agentConfig.model,
+      messages: messages,
+      temperature: agentConfig.temperature,
+      max_tokens: agentConfig.maxTokens,
+      top_p: agentConfig.topP,
     });
 
     // Return AI response and usage info
     return {
-      ...completion.choices[0].message,
-      usage: completion.usage,
+      response: response.choices[0].message.content,
+      usage: response.usage,
       agentId: agentConfig.id,
     };
   } catch (error) {

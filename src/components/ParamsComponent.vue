@@ -2,7 +2,7 @@
   <div class="params-container text-xs" v-if="block">
     <!-- Tab System -->
     <div
-      class="text-sm font-medium text-center text-gray-500 dark:text-gray-400 dark:border-gray-700"
+      class="text-sm font-medium text-center text-gray-500 border-b border-gray-200 dark:text-gray-400 dark:border-gray-700"
     >
       <ul class="flex flex-wrap -mb-px">
         <li class="me-2">
@@ -14,7 +14,7 @@
               'border-transparent hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300':
                 activeTab !== 'chat',
             }"
-            class="inline-block p-2 border-b-2 rounded-t-lg"
+            class="inline-block p-4 border-b-2 rounded-t-lg transition-all duration-200"
           >
             Chat
           </button>
@@ -28,7 +28,7 @@
               'border-transparent hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300':
                 activeTab !== 'connections',
             }"
-            class="inline-block p-2 border-b-2 rounded-t-lg"
+            class="inline-block p-4 border-b-2 rounded-t-lg transition-all duration-200"
           >
             Connections
           </button>
@@ -38,10 +38,10 @@
 
     <!-- Tab Content -->
     <div class="mt-4">
-      <div v-if="activeTab === 'connections'">
+      <div v-if="activeTab === 'connections'" class="fade-in">
         <ConnectionsComponent />
       </div>
-      <div v-if="activeTab === 'chat'">
+      <div v-if="activeTab === 'chat'" class="fade-in">
         <ChatComponent />
       </div>
     </div>
@@ -59,12 +59,26 @@ const nodeCode = computed(() => codeStore.nodeCode);
 const nodeBlocks = computed(() => codeStore.nodeBlocks);
 const block = computed(() => codeStore.block);
 
-const activeTab = ref("chat"); // Default to connections tab
+const activeTab = ref("chat"); // Default to chat tab
 </script>
 
 <style scoped>
-/* Smooth transitions */
-.transition-transform {
-  transition: transform 0.3s ease-in-out;
+.fade-in {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.transition-all {
+  transition: all 0.2s ease-in-out;
 }
 </style>
