@@ -1,30 +1,44 @@
 <template>
   <div class="chat-container">
-    <div class="text-gray-400">
-      <!-- Chat messages display -->
+    <div class="messages-container">
       <div
         v-for="(message, index) in chatHistory"
         :key="index"
         :class="['message', message.role]"
       >
-        <div class="message-content">{{ message.content }}</div>
-        <div class="message-timestamp">
+        <div class="message-content">
+          <pre v-if="message.role === 'system' && message.content">{{
+            message.content
+          }}</pre>
+          <pre
+            v-else-if="
+              message.role === 'assistant' &&
+              message.content &&
+              message.content.includes('```')
+            "
+          >
+            {{ message.content }}
+          </pre>
+          <span v-else-if="message.content">{{ message.content }}</span>
+          <span v-else>Empty message</span>
+        </div>
+        <div class="message-timestamp" v-if="message.timestamp">
           {{ formatTimestamp(message.timestamp) }}
         </div>
       </div>
 
       <!-- Loading indicator -->
       <div v-if="isLoading" class="loading">Thinking...</div>
+    </div>
 
-      <!-- Chat input -->
-      <div class="chat-input">
-        <textarea
-          v-model="currentMessage"
-          @keydown.enter.prevent="sendMessage"
-          placeholder="Ask about the code..."
-        ></textarea>
-        <button @click="sendMessage" :disabled="isLoading">Send</button>
-      </div>
+    <!-- Chat input -->
+    <div class="chat-input">
+      <textarea
+        v-model="currentMessage"
+        @keydown.enter.prevent="sendMessage"
+        placeholder="Ask about the code..."
+      ></textarea>
+      <button @click="sendMessage" :disabled="isLoading">Send</button>
     </div>
   </div>
 </template>
@@ -59,14 +73,34 @@ watch(
 
 const sendMessage = async () => {
   if (currentMessage.value.trim()) {
-    await aiStore.sendMessage(currentMessage.value);
-    currentMessage.value = "";
+    console.log("[CLIENT] Sending message:", currentMessage.value);
+    try {
+      await aiStore.sendMessage(currentMessage.value);
+      console.log("[CLIENT] Message sent successfully");
+      currentMessage.value = "";
+    } catch (error) {
+      console.error("[CLIENT] Error sending message:", error);
+      throw error;
+    }
   }
 };
 
 const formatTimestamp = (timestamp) => {
-  return new Date(timestamp).toLocaleTimeString();
+  try {
+    return new Date(timestamp).toLocaleTimeString();
+  } catch (error) {
+    console.error("Error formatting timestamp:", error);
+    return "";
+  }
 };
+
+const safeChatHistory = computed(() => {
+  return chatHistory.value.map((message) => ({
+    role: message.role || "unknown",
+    content: message.content || "",
+    timestamp: message.timestamp || new Date().toISOString(),
+  }));
+});
 </script>
 
 <style scoped>
@@ -74,6 +108,12 @@ const formatTimestamp = (timestamp) => {
   height: 100%;
   display: flex;
   flex-direction: column;
+}
+
+.messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
 }
 
 .message {

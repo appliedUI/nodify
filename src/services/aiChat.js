@@ -60,11 +60,19 @@ ${snippet.agentPrompt}`,
  */
 export const reviewCodeSnippet = async (agentConfig, snippet) => {
   try {
+    console.log("[SERVICE] Building system message for code review");
     const systemMessage = buildSystemMessage(agentConfig, snippet);
     const userMessage = buildUserMessage(snippet);
 
-    const messages = [systemMessage, userMessage];
+    console.log("[SERVICE] Sending code review request to OpenAI", {
+      model: agentConfig.model,
+      temperature: agentConfig.temperature,
+      maxTokens: agentConfig.maxTokens,
+      codeLength: snippet.code.length,
+      agentPrompt: snippet.agentPrompt,
+    });
 
+    const messages = [systemMessage, userMessage];
     const completion = await openai.chat.completions.create({
       model: agentConfig.model || "gpt-3.5-turbo",
       messages,
@@ -73,14 +81,19 @@ export const reviewCodeSnippet = async (agentConfig, snippet) => {
       top_p: agentConfig.topP ?? 1.0,
     });
 
+    console.log("[SERVICE] Received OpenAI response", {
+      usage: completion.usage,
+      responseLength: completion.choices[0].message.content.length,
+    });
+
     const choice = completion.choices?.[0];
     return {
-      message: choice?.message,
+      response: choice?.message?.content,
       usage: completion.usage,
       agentId: agentConfig.id,
     };
   } catch (error) {
-    console.error("Error in reviewCodeSnippet:", error);
+    console.error("[SERVICE] Error in reviewCodeSnippet:", error);
     throw error;
   }
 };
@@ -140,22 +153,25 @@ export const sendFollowUpMessage = async (
  */
 export const sendAgentMessage = async (agentConfig, userPrompt) => {
   try {
-    // Define system message that sets the "persona" or context for the agent
+    console.log("[SERVICE] Building system message for chat");
     const systemMessage = {
       role: "system",
       content: `You are ${agentConfig.name}, an AI assistant focused on helping users with their code and technical questions.`,
     };
 
-    // The user's prompt as a single message
+    console.log("[SERVICE] Sending chat message to OpenAI", {
+      model: agentConfig.model,
+      temperature: agentConfig.temperature,
+      maxTokens: agentConfig.maxTokens,
+      promptLength: userPrompt.length,
+    });
+
     const userMessage = {
       role: "user",
       content: userPrompt,
     };
 
-    // Combine messages for the conversation
     const messages = [systemMessage, userMessage];
-
-    // Call OpenAI Chat Completion endpoint
     const response = await openai.chat.completions.create({
       model: agentConfig.model,
       messages: messages,
@@ -164,14 +180,18 @@ export const sendAgentMessage = async (agentConfig, userPrompt) => {
       top_p: agentConfig.topP,
     });
 
-    // Return AI response and usage info
+    console.log("[SERVICE] Received OpenAI chat response", {
+      usage: response.usage,
+      responseLength: response.choices[0].message.content.length,
+    });
+
     return {
       response: response.choices[0].message.content,
       usage: response.usage,
       agentId: agentConfig.id,
     };
   } catch (error) {
-    console.error("Error in AI service:", error);
+    console.error("[SERVICE] Error in AI service:", error);
     throw error;
   }
 };

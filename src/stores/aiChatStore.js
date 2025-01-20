@@ -32,6 +32,7 @@ export const useAIStore = defineStore("ai", {
     async sendMessage(message) {
       if (!message.trim()) return;
 
+      console.log("[STORE] Preparing to send message:", message);
       this.isLoading = true;
       this.error = null;
       this.currentMessage = "";
@@ -44,15 +45,18 @@ export const useAIStore = defineStore("ai", {
       });
 
       try {
-        // Send message to AI
+        console.log("[STORE] Sending message to AI service...");
         const response = await sendAgentMessage(this.agentConfig, message);
+        console.log("[STORE] Received AI response:", response);
 
         // Add AI response to chat history
         this.chatHistory.push({
-          ...response,
+          role: "assistant",
+          content: response.response,
           timestamp: new Date().toISOString(),
         });
       } catch (error) {
+        console.error("[STORE] Error in sendMessage:", error);
         this.error = error.message || "Failed to send message";
         // Add error message to chat history
         this.chatHistory.push({
@@ -68,18 +72,20 @@ export const useAIStore = defineStore("ai", {
     },
 
     async sendCodeReview(nodeData) {
+      console.log("[STORE] Starting code review for:", nodeData.label);
       this.isLoading = true;
       this.error = null;
 
       try {
-        // Send code for review
+        console.log("[STORE] Sending code review request...");
         const response = await reviewCodeSnippet(this.agentConfig, {
           type: nodeData.type,
           label: nodeData.label,
           description: nodeData.description,
           code: nodeData.code,
-          agentPrompt: nodeData.agentPrompt
+          agentPrompt: nodeData.agentPrompt,
         });
+        console.log("[STORE] Received code review response:", response);
 
         // Add AI response to chat history
         this.chatHistory.push({
@@ -90,7 +96,7 @@ export const useAIStore = defineStore("ai", {
 
         return response;
       } catch (error) {
-        console.error("Error in AI chat:", error);
+        console.error("[STORE] Error in sendCodeReview:", error);
         this.error = error.message;
         throw error;
       } finally {
