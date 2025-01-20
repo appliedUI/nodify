@@ -158,10 +158,12 @@ const addNode = (nodeType) => {
     label: nodeType.label,
     code: nodeType.code,
     type: nodeType.type,
-    agentPrompt: nodeType.agentPrompt, // Add this line to include agentPrompt
+    agentPrompt: nodeType.agentPrompt,
   });
 
+  // Add the new node and select it immediately
   elements.value = [...elements.value, newNode];
+  codeStore.selectNode(newNode);
   updateCodeFromNodes();
 };
 
