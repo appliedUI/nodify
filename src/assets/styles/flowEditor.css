@@ -159,3 +159,56 @@
   border-radius: 4px;
   z-index: 1;
 }
+
+/* Code editor container styles */
+.code-editor-container {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 40%;
+  height: 100%;
+  background: #1e1e1e;
+  z-index: 100;
+  transition: width 0.3s ease;
+}
+
+.code-editor-container.collapsed {
+  width: 0;
+}
+
+/* Monaco editor specific styles */
+.monaco-editor {
+  height: 100%;
+  width: 100%;
+}
+
+.monaco-editor .view-overlays .current-line {
+  border: none !important;
+  background-color: rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Node selection indicator */
+.node-selected-indicator {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border: 2px solid #3b82f6;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 10;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+}

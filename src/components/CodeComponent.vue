@@ -6,15 +6,11 @@
       :style="{ width: `${codeWidth}px` }"
     >
       <div
-        v-for="(block, index) in codeBlocks"
-        :key="block.id"
-        class="code-block p-4 mb-2 rounded cursor-pointer hover:bg-gray-700"
-        :class="{ 'bg-black': selectedNodeId === block.id }"
-        @click="selectBlock(block.id)"
-        :data-block-id="block.id"
-      >
-        <div class="text-xs text-gray-100" v-html="block.highlighted"></div>
-      </div>
+        v-if="selectedBlock"
+        class="code-block h-full"
+        ref="monacoEditor"
+      ></div>
+      <div v-else class="p-4 text-gray-400">Select a node to edit its code</div>
     </div>
     <div
       class="resize-handle bg-gray-700 hover:bg-gray-600 w-1 h-full cursor-col-resize"
@@ -42,14 +38,56 @@
 <script setup>
 import { useCodeStore } from "@/stores/codeStore";
 import { storeToRefs } from "pinia";
-import { onMounted, watch, ref, computed, nextTick } from "vue";
+import {
+  onMounted,
+  watch,
+  ref,
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onBeforeMount,
+} from "vue";
+import * as monaco from "monaco-editor";
+import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
+import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
+import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker';
+import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker';
+import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
 import ParamsComponent from "@/components/ParamsComponent.vue";
 import CompiledComponent from "@/components/CompiledComponent.vue";
 import hljs from "highlight.js";
 import "highlight.js/styles/github-dark.css";
 
+// Configure Monaco's web workers for Vite
+onBeforeMount(() => {
+  // @ts-ignore
+  self.MonacoEnvironment = {
+    getWorker(_, label) {
+      if (label === 'json') {
+        return new jsonWorker();
+      }
+      if (label === 'css' || label === 'scss' || label === 'less') {
+        return new cssWorker();
+      }
+      if (label === 'html' || label === 'handlebars' || label === 'razor') {
+        return new htmlWorker();
+      }
+      if (label === 'typescript' || label === 'javascript') {
+        return new tsWorker();
+      }
+      return new editorWorker();
+    }
+  };
+});
+
 const codeStore = useCodeStore();
 const { nodeBlocks, selectedNodeId } = storeToRefs(codeStore);
+
+// Add computed property for selectedBlock
+const selectedBlock = computed(() => {
+  if (!selectedNodeId.value) return null;
+  return nodeBlocks.value.find(block => block.id === selectedNodeId.value);
+});
 
 // Width configuration variables
 const MIN_CODE_WIDTH = 0.2; // Minimum width of code section (50% of window)
@@ -64,6 +102,8 @@ const container = ref(null);
 const codeWidth = ref(window.innerWidth * INITIAL_CODE_WIDTH);
 const paramsWidth = ref(window.innerWidth * INITIAL_PARAMS_WIDTH);
 const compiledWidth = ref(window.innerWidth * INITIAL_COMPILED_WIDTH);
+const monacoEditor = ref(null);
+let editorInstance = null;
 let startX;
 let startWidth;
 let currentResizer = null;
@@ -120,47 +160,17 @@ const updateWidths = () => {
   compiledWidth.value = totalWidth * INITIAL_COMPILED_WIDTH;
 };
 
-onMounted(() => {
+onMounted(async () => {
   window.addEventListener("resize", updateWidths);
-  console.log("CodeComponent mounted, current code:", formattedNodeCode.value);
-});
-
-// Add new reactive variables
-const codeBlocks = ref([]);
-
-// Split nodeBlocks into blocks whenever it changes
-watch(
-  nodeBlocks,
-  (newBlocks) => {
-    codeBlocks.value = newBlocks.map((block) => {
-      return {
-        id: block.id,
-        raw: block.code,
-        highlighted: hljs.highlightAuto(block.code).value,
-      };
-    });
-  },
-  { immediate: true }
-);
-
-// Add block selection handler
-const selectBlock = (id) => {
-  codeStore.updateSelectedNodeId(id);
-};
-
-// Add this computed property
-const formattedNodeCode = computed(() => {
-  const selectedNode = nodeBlocks.value?.find(
-    (block) => block.id === selectedNodeId.value
-  );
-  return selectedNode?.code || "";
+  await nextTick();
+  await initEditor();
 });
 
 const coderContainer = ref(null);
 
 const scrollToBlock = (id) => {
   if (!id || !coderContainer.value) return;
-  
+
   nextTick(() => {
     const selectedBlock = coderContainer.value.querySelector(
       `[data-block-id="${id}"]`
@@ -168,18 +178,110 @@ const scrollToBlock = (id) => {
     if (selectedBlock) {
       selectedBlock.scrollIntoView({
         behavior: "smooth",
-        block: "center"
+        block: "center",
       });
     }
   });
 };
 
-// Replace the existing watcher with this one
-watch(selectedNodeId, (newId) => {
-  if (newId) {
-    scrollToBlock(newId);
+watch(
+  selectedNodeId,
+  async (newId) => {
+    if (newId) {
+      scrollToBlock(newId);
+      if (!editorInstance) {
+        await initEditor();
+      }
+    }
+  },
+  { immediate: true }
+);
+
+watch(
+  selectedBlock,
+  async (newVal) => {
+    await nextTick();
+    
+    if (!editorInstance) {
+      await initEditor();
+      return;
+    }
+
+    if (newVal) {
+      const currentValue = editorInstance.getValue();
+      const newCode = newVal.code || "";
+      
+      if (newCode !== currentValue) {
+        editorInstance.setValue(newCode);
+        
+        // Force layout update and focus
+        await nextTick();
+        editorInstance.layout();
+        editorInstance.focus();
+        
+        // Reset undo stack to prevent undoing to previous node's content
+        editorInstance.getModel()?.pushStackElement();
+      }
+    } else {
+      editorInstance.setValue("");
+    }
+  },
+  { immediate: true }
+);
+
+// Update editor initialization
+const initEditor = async () => {
+  await nextTick();
+  if (!monacoEditor.value) return;
+
+  // Dispose existing editor if it exists
+  if (editorInstance) {
+    editorInstance.dispose();
   }
-}, { immediate: true });
+
+  // Create editor with improved configuration
+  editorInstance = monaco.editor.create(monacoEditor.value, {
+    value: selectedBlock.value?.code || "",
+    language: "javascript",
+    theme: "my-dark-theme",
+    automaticLayout: true,
+    minimap: { enabled: false },
+    scrollBeyondLastLine: false,
+    fontSize: 14,
+    lineNumbers: "on",
+    roundedSelection: false,
+    scrollbar: {
+      vertical: "auto",
+      horizontal: "auto",
+    },
+    fixedOverflowWidgets: true, // Helps with tooltips
+    wordWrap: "on",
+    wrappingStrategy: "advanced",
+  });
+
+  // Update store when content changes with debounce
+  let timeout;
+  editorInstance.onDidChangeModelContent(() => {
+    clearTimeout(timeout);
+    timeout = setTimeout(async () => {
+      await nextTick();
+      const value = editorInstance.getValue();
+      codeStore.updateNodeCode(value);
+    }, 100);
+  });
+
+  // Force a layout update
+  await nextTick();
+  editorInstance.layout();
+  editorInstance.focus();
+};
+
+// Cleanup editor instance
+onBeforeUnmount(() => {
+  if (editorInstance) {
+    editorInstance.dispose();
+  }
+});
 </script>
 
 <style scoped>
@@ -208,7 +310,9 @@ watch(selectedNodeId, (newId) => {
 }
 
 .code-block {
-  transition: background-color 0.2s ease;
+  height: 100%;
+  width: 100%;
+  min-height: 300px; /* Ensure minimum height */
 }
 
 .scroll-smooth {

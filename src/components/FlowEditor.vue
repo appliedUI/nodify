@@ -130,8 +130,7 @@ const updateCodeFromNodes = () => {
 // Listen for node clicks and update selectedNodeId
 const onNodeClick = (nodeData) => {
   if (nodeData && nodeData.id) {
-    // Update selected node in store
-    codeStore.updateSelectedNodeId(nodeData.id);
+    codeStore.selectNode(nodeData);
   }
 };
 
@@ -139,12 +138,12 @@ const onNodeClick = (nodeData) => {
 watch(
   () => codeStore.selectedNodeId,
   (newId) => {
-    elements.value.forEach((el) => {
-      if (el.type) {
-        el.selected = el.data?.nodeId === newId;
-      }
-    });
-  }
+    const selectedNode = elements.value.find((el) => el.data?.nodeId === newId);
+    if (selectedNode) {
+      codeStore.selectNode(selectedNode);
+    }
+  },
+  { immediate: true }
 );
 
 const addNode = (nodeType) => {

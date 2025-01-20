@@ -4,42 +4,55 @@ export const useCodeStore = defineStore("code", {
   state: () => ({
     nodeCode: "",
     lastUpdateTimestamp: null,
-    selectedNodeId: null, // new
+    selectedNodeId: null,
     nodeBlocks: [],
-    block: null, // new
+    block: null,
     agentPrompt: "",
   }),
   actions: {
     updateNodeBlocks(blocks) {
       this.nodeBlocks = blocks;
-      this.nodeCode = blocks.map((b) => b.code).join("\n\n");
-      this.agentPrompt = blocks.map((b) => b.agentPrompt).join("\n\n");
       this.lastUpdateTimestamp = Date.now();
     },
     updateSelectedNodeId(id) {
       if (!id) return;
 
       this.selectedNodeId = id;
-      // Find the corresponding block
       const selectedBlock = this.nodeBlocks.find((block) => block.id === id);
       if (selectedBlock) {
         this.nodeCode = selectedBlock.code;
-        this.block = {
-          ...selectedBlock, // Spread all properties including agentPrompt
-          code: selectedBlock.code,
-          id: selectedBlock.id,
-        };
+        this.block = selectedBlock;
         this.lastUpdateTimestamp = Date.now();
       }
     },
     updateNodeCode(code) {
       this.nodeCode = code;
+      if (this.block) {
+        this.block.code = code;
+      }
+      this.lastUpdateTimestamp = Date.now();
+    },
+    selectNode(node) {
+      if (!node) return;
+      this.selectedNodeId = node.id;
+      this.nodeCode = node.data?.code || "";
+      this.block = {
+        id: node.id,
+        code: node.data?.code || "",
+        ...node.data,
+      };
       this.lastUpdateTimestamp = Date.now();
     },
   },
   getters: {
     formattedNodeCode: (state) => {
       return state.nodeCode ? state.nodeCode.trim() : "";
+    },
+    selectedNodeCode: (state) => {
+      const selectedNode = state.nodeBlocks.find(
+        (block) => block.id === state.selectedNodeId
+      );
+      return selectedNode?.code || "";
     },
   },
 });
