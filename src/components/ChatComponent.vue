@@ -1,7 +1,10 @@
 <template>
   <div class="chat-container flex flex-col h-full">
     <!-- Messages container with ref -->
-    <div ref="messagesContainer" class="messages-container flex-1 overflow-y-auto p-4 space-y-4">
+    <div
+      ref="messagesContainer"
+      class="messages-container flex-1 overflow-y-auto p-4 space-y-4"
+    >
       <div
         v-for="(message, index) in chatHistory"
         :key="index"
@@ -9,14 +12,20 @@
           'message rounded-lg p-3',
           message.role === 'user' ? 'bg-gray-700 ml-auto' : 'bg-gray-800',
           message.role === 'assistant' ? 'mr-auto' : '',
-          'max-w-[85%]'
+          'max-w-[85%]',
         ]"
       >
         <div class="message-content text-sm">
           <!-- Assistant message with JSON content -->
-          <template v-if="message.role === 'assistant' && typeof message.content === 'object'">
+          <template
+            v-if="
+              message.role === 'assistant' &&
+              typeof message.content === 'object'
+            "
+          >
+            <div v-html="message.content.code"></div>
             <!-- Main message with type styling -->
-            <div 
+            <div
               :class="['message-type', `type-${message.content.type}`]"
               class="mb-2"
             >
@@ -24,8 +33,8 @@
             </div>
             <!-- Details list without JSON formatting -->
             <ul v-if="message.content.details?.length" class="mt-2 space-y-2">
-              <li 
-                v-for="(detail, idx) in message.content.details" 
+              <li
+                v-for="(detail, idx) in message.content.details"
                 :key="idx"
                 class="markdown-content"
                 v-html="renderMarkdown(detail)"
@@ -35,7 +44,9 @@
 
           <!-- Other message types -->
           <template v-else>
-            <pre v-if="message.role === 'system'" class="whitespace-pre-wrap">{{ message.content }}</pre>
+            <pre v-if="message.role === 'system'" class="whitespace-pre-wrap">{{
+              message.content
+            }}</pre>
             <span v-else>{{ message.content }}</span>
           </template>
         </div>
@@ -45,8 +56,7 @@
       </div>
 
       <!-- Loading indicator -->
-      <div v-if="isLoading" 
-           class="loading text-gray-400 italic px-3 py-2">
+      <div v-if="isLoading" class="loading text-gray-400 italic px-3 py-2">
         Thinking...
       </div>
     </div>
@@ -74,11 +84,11 @@
 </template>
 
 <script setup>
-import { computed, ref, watch, nextTick, onMounted } from 'vue'
-import { useCodeStore } from '@/stores/codeStore'
-import { useAIStore } from '@/stores/aiChatStore'
-import MarkdownIt from 'markdown-it'
-import highlightjs from 'highlight.js'
+import { computed, ref, watch, nextTick, onMounted } from "vue";
+import { useCodeStore } from "@/stores/codeStore";
+import { useAIStore } from "@/stores/aiChatStore";
+import MarkdownIt from "markdown-it";
+import highlightjs from "highlight.js";
 
 // Initialize markdown-it
 const md = new MarkdownIt({
@@ -88,42 +98,48 @@ const md = new MarkdownIt({
   highlight: function (str, lang) {
     if (lang && highlightjs.getLanguage(lang)) {
       try {
-        return highlightjs.highlight(str, { language: lang }).value
+        return highlightjs.highlight(str, { language: lang }).value;
       } catch (__) {}
     }
-    return '' // use external default escaping
-  }
-})
+    return ""; // use external default escaping
+  },
+});
 
 // Add markdown rendering function
 const renderMarkdown = (content) => {
-  if (!content) return ''
-  return md.render(content)
-}
+  if (!content) return "";
+  return md.render(content);
+};
 
-const codeStore = useCodeStore()
-const aiStore = useAIStore()
+const codeStore = useCodeStore();
+const aiStore = useAIStore();
 
-const nodeCode = computed(() => codeStore.nodeCode)
-const block = computed(() => codeStore.block)
-const currentMessage = ref('')
-const isLoading = computed(() => aiStore.isLoading)
-const chatHistory = computed(() => aiStore.getChatHistory)
+const nodeCode = computed(() => codeStore.nodeCode);
+const block = computed(() => codeStore.block);
+const currentMessage = ref("");
+const isLoading = computed(() => aiStore.isLoading);
+const chatHistory = computed(() => aiStore.getChatHistory);
 
-const messagesContainer = ref(null)
+const messagesContainer = ref(null);
 
 const scrollToBottom = async () => {
-  await nextTick()
-  const lastMessage = messagesContainer.value?.querySelector('.message:last-child')
+  await nextTick();
+  const lastMessage = messagesContainer.value?.querySelector(
+    ".message:last-child"
+  );
   if (lastMessage) {
-    lastMessage.scrollIntoView({ behavior: 'smooth' })
+    lastMessage.scrollIntoView({ behavior: "smooth" });
   }
-}
+};
 
 // Watch chat history for changes
-watch(chatHistory, async () => {
-  await scrollToBottom()
-}, { deep: true, immediate: true })
+watch(
+  chatHistory,
+  async () => {
+    await scrollToBottom();
+  },
+  { deep: true, immediate: true }
+);
 
 // Watch for node changes to initialize code review
 watch(
@@ -134,47 +150,47 @@ watch(
         code: newBlock.code,
         agentPrompt: newBlock.agentPrompt,
         agentConfig: newBlock.agentConfig,
-        label: newBlock.label
+        label: newBlock.label,
       };
-      
-      console.log('[CLIENT] Initiating code review with data:', reviewData);
+
+      console.log("[CLIENT] Initiating code review with data:", reviewData);
       aiStore.sendCodeReview(reviewData);
     }
   },
   { immediate: true }
-)
+);
 
 const sendMessage = async () => {
   if (currentMessage.value.trim()) {
-    console.log('[CLIENT] Sending message:', currentMessage.value)
+    console.log("[CLIENT] Sending message:", currentMessage.value);
     try {
-      await aiStore.sendMessage(currentMessage.value)
-      console.log('[CLIENT] Message sent successfully')
-      currentMessage.value = ''
-      await scrollToBottom() // Scroll after sending message
+      await aiStore.sendMessage(currentMessage.value);
+      console.log("[CLIENT] Message sent successfully");
+      currentMessage.value = "";
+      await scrollToBottom(); // Scroll after sending message
     } catch (error) {
-      console.error('[CLIENT] Error sending message:', error)
-      throw error
+      console.error("[CLIENT] Error sending message:", error);
+      throw error;
     }
   }
-}
+};
 
 const formatTimestamp = (timestamp) => {
   try {
-    return new Date(timestamp).toLocaleTimeString()
+    return new Date(timestamp).toLocaleTimeString();
   } catch (error) {
-    console.error('Error formatting timestamp:', error)
-    return ''
+    console.error("Error formatting timestamp:", error);
+    return "";
   }
-}
+};
 
 const safeChatHistory = computed(() => {
   return chatHistory.value.map((message) => ({
-    role: message.role || 'unknown',
-    content: message.content || '',
+    role: message.role || "unknown",
+    content: message.content || "",
     timestamp: message.timestamp || new Date().toISOString(),
-  }))
-})
+  }));
+});
 </script>
 
 <style scoped>
@@ -186,8 +202,7 @@ const safeChatHistory = computed(() => {
 
 .messages-container {
   scrollbar-width: thin;
-  scrollbar-color: #4A5568 #2D3748;
-
+  scrollbar-color: #4a5568 #2d3748;
 }
 
 .messages-container::-webkit-scrollbar {
@@ -195,11 +210,11 @@ const safeChatHistory = computed(() => {
 }
 
 .messages-container::-webkit-scrollbar-track {
-  background: #2D3748;
+  background: #2d3748;
 }
 
 .messages-container::-webkit-scrollbar-thumb {
-  background-color: #4A5568;
+  background-color: #4a5568;
   border-radius: 4px;
 }
 
@@ -225,7 +240,7 @@ textarea {
 
 textarea:focus {
   outline: none;
-  ring: 2px solid #3B82F6;
+  ring: 2px solid #3b82f6;
 }
 
 .message-type {
@@ -234,19 +249,19 @@ textarea:focus {
 }
 
 .type-info {
-  color: #3B82F6;
+  color: #3b82f6;
 }
 
 .type-warning {
-  color: #F59E0B;
+  color: #f59e0b;
 }
 
 .type-error {
-  color: #EF4444;
+  color: #ef4444;
 }
 
 .type-success {
-  color: #10B981;
+  color: #10b981;
 }
 
 .markdown-content :deep(pre) {
@@ -265,7 +280,7 @@ textarea:focus {
 }
 
 .markdown-content :deep(a) {
-  color: #3B82F6;
+  color: #3b82f6;
   text-decoration: underline;
 }
 
@@ -280,10 +295,10 @@ textarea:focus {
 }
 
 .markdown-content :deep(blockquote) {
-  border-left: 4px solid #4A5568;
+  border-left: 4px solid #4a5568;
   padding-left: 1rem;
   margin: 1rem 0;
-  color: #9CA3AF;
+  color: #9ca3af;
 }
 
 .markdown-content :deep(p) {
@@ -298,5 +313,37 @@ textarea:focus {
 .markdown-content :deep(h6) {
   font-weight: 600;
   margin: 1rem 0 0.5rem 0;
+}
+
+/* Add these new styles for form inputs within v-html content */
+.message-content :deep(input),
+.message-content :deep(select),
+.message-content :deep(textarea) {
+  background-color: #1f2937;
+  color: #e5e7eb;
+  border: 1px solid #4b5563;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  margin: 0.25rem 0;
+  width: 100%;
+}
+
+.message-content :deep(input:focus),
+.message-content :deep(select:focus),
+.message-content :deep(textarea:focus) {
+  outline: none;
+  border-color: #3b82f6;
+  ring: 2px solid #3b82f6;
+}
+
+.message-content :deep(input::placeholder),
+.message-content :deep(select::placeholder),
+.message-content :deep(textarea::placeholder) {
+  color: #9ca3af;
+}
+
+.message-content :deep(option) {
+  background-color: #1f2937;
+  color: #e5e7eb;
 }
 </style>

@@ -21,7 +21,7 @@ const buildSystemMessage = (agentConfig, snippet) => {
                 "message": "Your main review comments (supports markdown formatting)",
                 "type": "info|warning|error|success",
                 "details": ["Specific suggestions or improvements (supports markdown formatting)"],
-                "code": "HTML code which represents the code snippet. show form inputs for items the user can override like input fields, varibles, etc."
+                "code": "produce HTML code which can be used to override core parts of the code snippet. show form inputs for items the user can override like input fields, varibles, etc."
               }`,
   };
 };
@@ -53,19 +53,24 @@ export const reviewCodeSnippet = async (agentConfig, snippet) => {
 
     console.log("[SERVICE] Building system message for code review");
     // Get unique config from nodeTypes.json
-    const nodeConfig = nodeTypes.find((node) => node.id === snippet?.id)?.agentConfig;
+    const nodeConfig = nodeTypes.find(
+      (node) => node.id === snippet?.id
+    )?.agentConfig;
     const config = nodeConfig || agentConfig;
 
     console.log("[SERVICE] Using configuration:", config);
 
-    const messages = [buildSystemMessage(config, snippet), buildUserMessage(snippet)];
+    const messages = [
+      buildSystemMessage(config, snippet),
+      buildUserMessage(snippet),
+    ];
     const completion = await openai.chat.completions.create({
       model: config.model,
       messages,
       temperature: config.temperature,
       max_tokens: config.maxTokens,
       top_p: config.topP,
-      response_format: { type: "json_object" }
+      response_format: { type: "json_object" },
     });
 
     console.log("[SERVICE] Received OpenAI response", {
@@ -172,7 +177,7 @@ export const sendAgentMessage = async (agentConfig, userPrompt) => {
       temperature: agentConfig.temperature,
       max_tokens: agentConfig.maxTokens,
       top_p: agentConfig.topP,
-      response_format: { type: "json_object" }
+      response_format: { type: "json_object" },
     });
 
     console.log("[SERVICE] Received OpenAI chat response", {
