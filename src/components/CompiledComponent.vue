@@ -4,6 +4,7 @@
       v-if="compiledCode"
       class="compiled-content bg-gray-800 rounded-lg"
       v-html="compiledCode"
+      @submit.prevent="handleFormSubmit"
     ></div>
     <p v-else class="text-gray-400 italic">No compiled code available yet.</p>
   </div>
@@ -11,10 +12,60 @@
 
 <script setup>
 import { useAIStore } from "../stores/aiChatStore";
-import { computed } from "vue";
+import { computed, onMounted, onUpdated, watch, nextTick } from "vue";
 
 const store = useAIStore();
 const compiledCode = computed(() => store.getLatestCode);
+
+// Handle form submission
+const handleFormSubmit = (event) => {
+  event.preventDefault();
+  const form = event.target;
+  const formData = new FormData(form);
+  const formValues = {};
+
+  formData.forEach((value, key) => {
+    formValues[key] = value;
+  });
+
+  console.log("Form submitted with values:", formValues);
+};
+
+// Track if listeners are attached
+let listenersAttached = false;
+
+const attachFormListeners = () => {
+  if (listenersAttached) return;
+
+  nextTick(() => {
+    const forms = document.querySelectorAll(".compiled-content form");
+    forms.forEach((form) => {
+      // Only add listener if not already attached
+      if (!form.__listenerAttached) {
+        form.addEventListener("submit", handleFormSubmit);
+        form.__listenerAttached = true; // Mark as attached
+      }
+    });
+    listenersAttached = true;
+  });
+};
+
+// Watch for compiledCode changes and attach event listeners
+watch(compiledCode, () => {
+  listenersAttached = false;
+  attachFormListeners();
+});
+
+// Attach listeners on component mount
+onMounted(() => {
+  attachFormListeners();
+});
+
+// Reset listeners on update
+onUpdated(() => {
+  listenersAttached = false;
+  attachFormListeners();
+});
 
 // Add styles for form inputs in compiled code
 </script>
@@ -42,7 +93,7 @@ const compiledCode = computed(() => store.getLatestCode);
 
 .compiled-content :deep(label) {
   font-size: 12px;
-  color: #10c9e9;
+  color: #a3a3a3;
 }
 
 .compiled-content :deep(input:focus),
