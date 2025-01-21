@@ -4,68 +4,75 @@
       v-if="compiledCode"
       class="compiled-content bg-gray-800 rounded-lg"
       v-html="compiledCode"
-      @submit.prevent="handleFormSubmit"
     ></div>
     <p v-else class="text-gray-400 italic">No compiled code available yet.</p>
   </div>
 </template>
 
 <script setup>
-import { useAIStore } from "../stores/aiChatStore";
-import { computed, onMounted, onUpdated, watch, nextTick } from "vue";
+import { useAIStore } from '../stores/aiChatStore'
+import { computed, onMounted, onUpdated, watch, nextTick } from 'vue'
 
-const store = useAIStore();
-const compiledCode = computed(() => store.getLatestCode);
+const store = useAIStore()
+const compiledCode = computed(() => store.getLatestCode)
 
 // Handle form submission
-const handleFormSubmit = (event) => {
-  event.preventDefault();
-  const form = event.target;
-  const formData = new FormData(form);
-  const formValues = {};
+const handleFormSubmit = async (event) => {
+  event.preventDefault()
+  const form = event.target
+  const formData = new FormData(form)
+  const formValues = {}
 
   formData.forEach((value, key) => {
-    formValues[key] = value;
-  });
+    formValues[key] = value
+  })
 
-  console.log("Form submitted with values:", formValues);
-};
+  try {
+    await store.handleCompileSubmit({
+      formData: formValues,
+      compiledCode: compiledCode.value,
+    })
+    console.log('Form and code submitted successfully')
+  } catch (error) {
+    console.error('Error submitting form and code:', error)
+  }
+}
 
 // Track if listeners are attached
-let listenersAttached = false;
+let listenersAttached = false
 
 const attachFormListeners = () => {
-  if (listenersAttached) return;
+  if (listenersAttached) return
 
   nextTick(() => {
-    const forms = document.querySelectorAll(".compiled-content form");
+    const forms = document.querySelectorAll('.compiled-content form')
     forms.forEach((form) => {
       // Only add listener if not already attached
       if (!form.__listenerAttached) {
-        form.addEventListener("submit", handleFormSubmit);
-        form.__listenerAttached = true; // Mark as attached
+        form.addEventListener('submit', handleFormSubmit)
+        form.__listenerAttached = true // Mark as attached
       }
-    });
-    listenersAttached = true;
-  });
-};
+    })
+    listenersAttached = true
+  })
+}
 
 // Watch for compiledCode changes and attach event listeners
 watch(compiledCode, () => {
-  listenersAttached = false;
-  attachFormListeners();
-});
+  listenersAttached = false
+  attachFormListeners()
+})
 
 // Attach listeners on component mount
 onMounted(() => {
-  attachFormListeners();
-});
+  attachFormListeners()
+})
 
 // Reset listeners on update
 onUpdated(() => {
-  listenersAttached = false;
-  attachFormListeners();
-});
+  listenersAttached = false
+  attachFormListeners()
+})
 
 // Add styles for form inputs in compiled code
 </script>

@@ -126,6 +126,14 @@ export const useAIStore = defineStore("ai", {
       }
     },
 
+    async handleCompileSubmit(payload) {
+
+      //send this to aiChat service
+
+
+
+    },
+
     clearChat() {
       this.chatHistory = [];
       this.error = null;
