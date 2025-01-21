@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import nodeTypes from "@/nodeData/nodeTypes.json";
 
 const openai = new OpenAI({
   apiKey: import.meta.env.VITE_OPENAI_API_KEY,
@@ -50,20 +51,13 @@ export const reviewCodeSnippet = async (agentConfig, snippet) => {
     }
 
     console.log("[SERVICE] Building system message for code review");
-    const systemMessage = buildSystemMessage(agentConfig, snippet);
-    const userMessage = buildUserMessage(snippet);
-
-    // Ensure required config values
-    const config = {
-      model: agentConfig?.model || "gpt-4o-mini",
-      temperature: agentConfig?.temperature ?? 0.7,
-      maxTokens: agentConfig?.maxTokens ?? 1000,
-      topP: agentConfig?.topP ?? 1.0
-    };
+    // Get unique config from nodeTypes.json
+    const nodeConfig = nodeTypes.find((node) => node.id === snippet?.id)?.agentConfig;
+    const config = nodeConfig || agentConfig;
 
     console.log("[SERVICE] Using configuration:", config);
 
-    const messages = [systemMessage, userMessage];
+    const messages = [buildSystemMessage(config, snippet), buildUserMessage(snippet)];
     const completion = await openai.chat.completions.create({
       model: config.model,
       messages,

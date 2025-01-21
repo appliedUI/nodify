@@ -1,4 +1,5 @@
 import { defineStore } from "pinia";
+import nodeTypes from "@/nodeData/nodeTypes.json";
 
 export const useCodeStore = defineStore("code", {
   state: () => ({
@@ -41,6 +42,10 @@ export const useCodeStore = defineStore("code", {
         code: node.data?.code || "",
         ...node.data,
       };
+      const nodeType = nodeTypes.find((n) => n.id === node.id);
+      if (nodeType?.agentConfig) {
+        this.block.agentConfig = nodeType.agentConfig;
+      }
       this.lastUpdateTimestamp = Date.now();
     },
   },
