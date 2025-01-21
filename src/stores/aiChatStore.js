@@ -10,16 +10,9 @@ export const useAIStore = defineStore("ai", {
     chatHistory: [],
     isLoading: false,
     error: null,
-    agentConfig: {
-      id: "chat-agent",
-      name: "AI Assistant",
-      model: "gpt-3.5-turbo",
-      temperature: 0.7,
-      maxTokens: 1000,
-      topP: 1.0,
-    },
     currentMessage: "",
     isTyping: false,
+    agentConfig: {} // Empty object since we'll use snippet-specific configs
   }),
 
   getters: {
@@ -71,26 +64,44 @@ export const useAIStore = defineStore("ai", {
       }
     },
 
-    async sendCodeReview(nodeData) {
-      console.log("[STORE] Starting code review for:", nodeData.label);
+    async sendCodeReview(snippet) {
+      console.log("[STORE] Starting code review for:", snippet?.label || 'unnamed snippet');
       this.isLoading = true;
       this.error = null;
 
       try {
-        console.log("[STORE] Sending code review request...");
-        const response = await reviewCodeSnippet(this.agentConfig, {
-          type: nodeData.type,
-          label: nodeData.label,
-          description: nodeData.description,
-          code: nodeData.code,
-          agentPrompt: nodeData.agentPrompt,
-        });
+        const config = snippet?.agentConfig || {
+          model: "gpt-4o-mini",
+          temperature: 0.7,
+          maxTokens: 1000,
+          topP: 1.0
+        };
+
+        console.log("[STORE] Sending code review request with config:", config);
+        const response = await reviewCodeSnippet(config, snippet);
         console.log("[STORE] Received code review response:", response);
 
-        // Add AI response to chat history
+        // Parse the JSON response string
+        let parsedContent;
+        try {
+          if (typeof response.response === 'string') {
+            parsedContent = JSON.parse(response.response.replace(/\n/g, ''));
+          } else {
+            parsedContent = response.response;
+          }
+        } catch (e) {
+          console.warn('[STORE] Failed to parse JSON response:', e);
+          parsedContent = {
+            message: response.response,
+            type: 'error',
+            details: ['Failed to parse response format']
+          };
+        }
+
+        // Add AI response to chat history with parsed content
         this.chatHistory.push({
           role: "assistant",
-          content: response.response,
+          content: parsedContent,
           timestamp: new Date().toISOString(),
         });
 

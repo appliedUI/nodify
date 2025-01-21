@@ -14,7 +14,13 @@ const openai = new OpenAI({
 const buildSystemMessage = (agentConfig, snippet) => {
   return {
     role: "system",
-    content: `You are an AI code reviewer. ${snippet.agentPrompt}`,
+    content: `You are an AI code reviewer. ${snippet.agentPrompt}
+              Format your response as JSON with the following structure:
+              {
+                "message": "Your main review comments (supports markdown formatting)",
+                "type": "info|warning|error|success",
+                "details": ["Specific suggestions or improvements (supports markdown formatting)"]
+              }`,
   };
 };
 
@@ -39,25 +45,32 @@ ${snippet.code}`,
  */
 export const reviewCodeSnippet = async (agentConfig, snippet) => {
   try {
+    if (!snippet?.code) {
+      throw new Error("No code provided for review");
+    }
+
     console.log("[SERVICE] Building system message for code review");
     const systemMessage = buildSystemMessage(agentConfig, snippet);
     const userMessage = buildUserMessage(snippet);
 
-    console.log("[SERVICE] Sending code review request to OpenAI", {
-      model: agentConfig.model,
-      temperature: agentConfig.temperature,
-      maxTokens: agentConfig.maxTokens,
-      codeLength: snippet.code.length,
-      agentPrompt: snippet.agentPrompt,
-    });
+    // Ensure required config values
+    const config = {
+      model: agentConfig?.model || "gpt-4o-mini",
+      temperature: agentConfig?.temperature ?? 0.7,
+      maxTokens: agentConfig?.maxTokens ?? 1000,
+      topP: agentConfig?.topP ?? 1.0
+    };
+
+    console.log("[SERVICE] Using configuration:", config);
 
     const messages = [systemMessage, userMessage];
     const completion = await openai.chat.completions.create({
-      model: agentConfig.model || "gpt-3.5-turbo",
+      model: config.model,
       messages,
-      temperature: agentConfig.temperature ?? 0.7,
-      max_tokens: agentConfig.maxTokens ?? 2000,
-      top_p: agentConfig.topP ?? 1.0,
+      temperature: config.temperature,
+      max_tokens: config.maxTokens,
+      top_p: config.topP,
+      response_format: { type: "json_object" }
     });
 
     console.log("[SERVICE] Received OpenAI response", {
@@ -69,7 +82,7 @@ export const reviewCodeSnippet = async (agentConfig, snippet) => {
     return {
       response: choice?.message?.content,
       usage: completion.usage,
-      agentId: agentConfig.id,
+      agentId: config.id,
     };
   } catch (error) {
     console.error("[SERVICE] Error in reviewCodeSnippet:", error);
@@ -136,14 +149,13 @@ export const sendAgentMessage = async (agentConfig, userPrompt) => {
     const systemMessage = {
       role: "system",
       content: `You are ${agentConfig.name}, an AI assistant focused on helping users with their code and technical questions. 
-                Format your responses as markdown text. Use markdown formatting for:
-                - Code blocks: \`\`\`language\ncode\n\`\`\`
-                - Inline code: \`code\`
-                - Lists: * or - for unordered, 1. for ordered
-                - Headings: #, ##, ###
-                - Links: [text](url)
-                - Emphasis: *italic*, **bold**
-                - Blockquotes: > text`,
+                Format your responses as JSON with the following structure:
+                {
+                  "message": "Your main response message (supports markdown formatting)",
+                  "type": "info|warning|error|success",
+                  "details": ["Additional details or suggestions (support markdown formatting)"]
+                }
+                Use markdown formatting for code blocks, links, and emphasis where appropriate.`,
     };
 
     console.log("[SERVICE] Sending chat message to OpenAI", {
@@ -160,11 +172,12 @@ export const sendAgentMessage = async (agentConfig, userPrompt) => {
 
     const messages = [systemMessage, userMessage];
     const response = await openai.chat.completions.create({
-      model: agentConfig.model || "gpt-4",
+      model: agentConfig.model || "gpt-4o-mini",
       messages: messages,
       temperature: agentConfig.temperature,
       max_tokens: agentConfig.maxTokens,
       top_p: agentConfig.topP,
+      response_format: { type: "json_object" }
     });
 
     console.log("[SERVICE] Received OpenAI chat response", {
@@ -172,8 +185,10 @@ export const sendAgentMessage = async (agentConfig, userPrompt) => {
       responseLength: response.choices[0].message.content.length,
     });
 
+    const jsonResponse = JSON.parse(response.choices[0].message.content);
+
     return {
-      response: response.choices[0].message.content,
+      response: jsonResponse,
       usage: response.usage,
       agentId: agentConfig.id,
     };
