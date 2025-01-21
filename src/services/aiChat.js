@@ -197,3 +197,43 @@ export const sendAgentMessage = async (agentConfig, userPrompt) => {
     throw error;
   }
 };
+
+/**
+ * Updates compiled code based on form data submissions
+ * @param {Object} payload - Contains formData and current compiledCode
+ * @returns {Object} The AI's response with updated code
+ */
+export const updateCompiledCode = async (payload) => {
+  try {
+    console.log("[AI Service] Updating code with payload:", payload);
+    
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: `You are a code generation assistant. Your task is to generate new code based on user input values.`
+        },
+        {
+          role: "user",
+          content: `Original code:
+${payload.compiledCode}
+
+Form values submitted: ${JSON.stringify(payload.formData)}
+
+Please update the code based on these form values while maintaining the same structure and functionality.`
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 1000
+    });
+
+    return {
+      code: response.choices[0].message.content,
+      usage: response.usage
+    };
+  } catch (error) {
+    console.error("Error updating compiled code:", error);
+    throw error;
+  }
+};

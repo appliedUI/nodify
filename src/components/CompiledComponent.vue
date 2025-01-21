@@ -4,6 +4,7 @@
       v-if="compiledCode"
       class="compiled-content bg-gray-800 rounded-lg"
       v-html="compiledCode"
+      @submit.prevent="handleFormSubmit"
     ></div>
     <p v-else class="text-gray-400 italic">No compiled code available yet.</p>
   </div>
@@ -19,6 +20,8 @@ const compiledCode = computed(() => store.getLatestCode)
 // Handle form submission
 const handleFormSubmit = async (event) => {
   event.preventDefault()
+  console.log("[Component] Form submission started")
+  
   const form = event.target
   const formData = new FormData(form)
   const formValues = {}
@@ -27,14 +30,20 @@ const handleFormSubmit = async (event) => {
     formValues[key] = value
   })
 
+  console.log("[Component] Form values collected:", formValues)
+  console.log("[Component] Current compiled code:", compiledCode.value)
+
   try {
-    await store.handleCompileSubmit({
+    const payload = {
       formData: formValues,
       compiledCode: compiledCode.value,
-    })
-    console.log('Form and code submitted successfully')
+    }
+    console.log("[Component] Sending payload to store:", payload)
+    
+    await store.handleCompileSubmit(payload)
+    console.log('[Component] Form and code submitted successfully')
   } catch (error) {
-    console.error('Error submitting form and code:', error)
+    console.error('[Component] Error submitting form and code:', error)
   }
 }
 
@@ -45,14 +54,17 @@ const attachFormListeners = () => {
   if (listenersAttached) return
 
   nextTick(() => {
+    console.log("[Component] Attaching form listeners")
     const forms = document.querySelectorAll('.compiled-content form')
+    console.log("[Component] Found forms:", forms.length)
+    
     forms.forEach((form) => {
-      // Only add listener if not already attached
-      if (!form.__listenerAttached) {
-        form.addEventListener('submit', handleFormSubmit)
-        form.__listenerAttached = true // Mark as attached
-      }
+      // Remove any existing listeners first to prevent duplicates
+      form.removeEventListener('submit', handleFormSubmit)
+      form.addEventListener('submit', handleFormSubmit)
+      console.log("[Component] Attached listener to form")
     })
+    
     listenersAttached = true
   })
 }

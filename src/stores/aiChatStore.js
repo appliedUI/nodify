@@ -3,6 +3,7 @@ import {
   sendAgentMessage,
   reviewCodeSnippet,
   sendFollowUpMessage,
+  updateCompiledCode,
 } from "../services/aiChat";
 
 export const useAIStore = defineStore("ai", {
@@ -127,11 +128,27 @@ export const useAIStore = defineStore("ai", {
     },
 
     async handleCompileSubmit(payload) {
+      try {
+        const response = await updateCompiledCode(payload);
+        console.log("[STORE] Received response from AI service:", response);
+        
+        // Add the interaction to chat history
+        this.chatHistory.push({
+          role: "assistant",
+          content: {
+            message: "Code updated based on form submission",
+            type: "success",
+            details: [],
+            code: response.code
+          },
+          timestamp: new Date().toISOString(),
+        });
 
-      //send this to aiChat service
-
-
-
+        return response;
+      } catch (error) {
+        console.error("[STORE] Error handling compile submission:", error);
+        throw error;
+      }
     },
 
     clearChat() {
