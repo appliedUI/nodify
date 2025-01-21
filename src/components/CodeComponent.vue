@@ -5,10 +5,7 @@
       ref="coderContainer"
       :style="{ width: `${codeWidth}px` }"
     >
-      <div
-        class="code-block h-full"
-        ref="monacoEditor"
-      ></div>
+      <div class="code-block h-full" ref="monacoEditor"></div>
     </div>
     <div
       class="resize-handle bg-gray-700 hover:bg-gray-600 w-1 h-full cursor-col-resize"
@@ -87,9 +84,9 @@ const selectedBlock = computed(() => {
   return nodeBlocks.value.find((block) => block.id === selectedNodeId.value);
 });
 
-// Add computed for current code
+// Update currentCode computed property
 const currentCode = computed(() => {
-  return compiledCode.value || (selectedBlock.value?.code ?? '');
+  return selectedBlock.value?.code || "";
 });
 
 // Width configuration variables
@@ -191,11 +188,25 @@ const scrollToBlock = (id) => {
   });
 };
 
+// Watch for selectedNodeId changes and update editor
 watch(
   selectedNodeId,
   async (newId) => {
     if (newId) {
+      // Update editor with new code
+      if (editorInstance) {
+        const newCode = selectedBlock.value?.code || "";
+        editorInstance.setValue(newCode);
+        nextTick(() => {
+          editorInstance.layout();
+          editorInstance.focus();
+        });
+      }
+
+      // Scroll to the selected block
       scrollToBlock(newId);
+
+      // Initialize editor if it doesn't exist
       if (!editorInstance) {
         await initEditor();
       }
@@ -205,23 +216,27 @@ watch(
 );
 
 // Watch for changes in currentCode and update editor
-watch(currentCode, (newCode) => {
-  console.log('[DEBUG] currentCode changed:', newCode);
-  console.log('[DEBUG] editorInstance exists:', !!editorInstance);
-  
-  if (editorInstance && newCode !== undefined) {
-    console.log('[DEBUG] Updating editor content');
-    const currentValue = editorInstance.getValue();
-    if (currentValue !== newCode) {
-      editorInstance.setValue(newCode);
-      // Force a layout update
-      nextTick(() => {
-        editorInstance.layout();
-        editorInstance.focus();
-      });
+watch(
+  currentCode,
+  (newCode) => {
+    console.log("[DEBUG] currentCode changed:", newCode);
+    console.log("[DEBUG] editorInstance exists:", !!editorInstance);
+
+    if (editorInstance && newCode !== undefined) {
+      console.log("[DEBUG] Updating editor content");
+      const currentValue = editorInstance.getValue();
+      if (currentValue !== newCode) {
+        editorInstance.setValue(newCode);
+        // Force a layout update
+        nextTick(() => {
+          editorInstance.layout();
+          editorInstance.focus();
+        });
+      }
     }
-  }
-}, { immediate: true });
+  },
+  { immediate: true }
+);
 
 // Update editor initialization
 const initEditor = async () => {
