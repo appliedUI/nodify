@@ -6,6 +6,7 @@ import {
   updateCompiledCode,
 } from "../services/aiChat";
 import { useCodeStore } from "./codeStore";
+import { dbService } from "@/services/dbService";
 
 export const useAIStore = defineStore("ai", {
   state: () => ({
@@ -32,6 +33,10 @@ export const useAIStore = defineStore("ai", {
   },
 
   actions: {
+    async loadChatHistory() {
+      this.chatHistory = await dbService.getChatHistory();
+    },
+
     async sendMessage(message) {
       if (!message.trim()) return;
 
@@ -42,6 +47,12 @@ export const useAIStore = defineStore("ai", {
 
       // Add user message to chat history
       this.chatHistory.push({
+        role: "user",
+        content: message,
+        timestamp: new Date().toISOString(),
+      });
+
+      await dbService.saveChatMessage({
         role: "user",
         content: message,
         timestamp: new Date().toISOString(),
@@ -58,11 +69,23 @@ export const useAIStore = defineStore("ai", {
           content: response.response, // Store raw markdown content
           timestamp: new Date().toISOString(),
         });
+
+        await dbService.saveChatMessage({
+          role: "assistant",
+          content: response.response,
+          timestamp: new Date().toISOString(),
+        });
       } catch (error) {
         console.error("[STORE] Error in sendMessage:", error);
         this.error = error.message || "Failed to send message";
         // Add error message to chat history
         this.chatHistory.push({
+          role: "assistant",
+          content: "Sorry, I encountered an error. Please try again.",
+          timestamp: new Date().toISOString(),
+          isError: true,
+        });
+        await dbService.saveChatMessage({
           role: "assistant",
           content: "Sorry, I encountered an error. Please try again.",
           timestamp: new Date().toISOString(),
@@ -118,6 +141,12 @@ export const useAIStore = defineStore("ai", {
           timestamp: new Date().toISOString(),
         });
 
+        await dbService.saveChatMessage({
+          role: "assistant",
+          content: parsedContent,
+          timestamp: new Date().toISOString(),
+        });
+
         return response;
       } catch (error) {
         console.error("[STORE] Error in sendCodeReview:", error);
@@ -149,7 +178,7 @@ export const useAIStore = defineStore("ai", {
         // Update the underlying code in codeStore
         const codeStore = useCodeStore();
         codeStore.updateCompiledCode(response.newCode);
-        
+
         return response;
       } catch (error) {
         console.error("[STORE] Error handling compile submission:", error);

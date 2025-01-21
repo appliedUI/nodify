@@ -14,6 +14,7 @@
     "@vue-flow/controls": "^1.1.2",
     "@vue-flow/core": "^1.42.1",
     "@vue-flow/node-resizer": "^1.4.0",
+    "dexie": "^4.0.11",
     "highlight.js": "^11.11.1",
     "markdown-it": "^14.1.0",
     "monaco-editor": "^0.52.2",

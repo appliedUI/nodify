@@ -10,4 +10,20 @@ const app = createApp(App);
 const pinia = createPinia();
 app.use(pinia);
 
+// Initialize stores after app creation
 app.mount("#app");
+
+// Load initial data after mount
+const initializeStores = async () => {
+  const { useCodeStore } = await import("@/stores/codeStore");
+  const { useAIStore } = await import("@/stores/aiChatStore");
+
+  const codeStore = useCodeStore();
+  const aiStore = useAIStore();
+
+  await Promise.all([codeStore.loadNodes(), aiStore.loadChatHistory()]);
+};
+
+initializeStores().catch((error) => {
+  console.error("Failed to initialize stores:", error);
+});

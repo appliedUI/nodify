@@ -1,70 +1,85 @@
 <template>
-  <VueFlow
-    v-model="elements"
-    :default-viewport="{ zoom: 1.1 }"
-    :snap-to-grid="true"
-    :snap-grid="[16, 16]"
-    @dragover="onDragOver"
-    @nodeClick="({ node }) => onNodeClick(node)"
-    class="dark"
-    selection-key="Control"
-    multi-selection-key="Shift"
-    :pan-on-drag="false"
-    :selection-on-drag="true"
-    :nodes-draggable="true"
-    :nodes-connectable="true"
-    :elements-selectable="true"
-    :selection-mode="selectionMode"
-    :zoom-on-double-click="false"
-    :pan-on-scroll="false"
-    :node-types="nodeTypes"
-  >
-    <template #node-resizableGroup="nodeProps">
-      <div :style="nodeProps.style">
-        <div class="group-label">{{ nodeProps.data?.label || "Group" }}</div>
-        <NodeResizer
-          :min-width="200"
-          :min-height="100"
-          :is-visible="true"
-          :enable-top-left="false"
-          :enable-top-right="false"
-          :enable-bottom-left="false"
-          :enable-bottom-right="true"
-          :enable-edge-resize="false"
-          :line-style="{ stroke: 'none' }"
-        />
-      </div>
-    </template>
-    <Background pattern-color="#4B5563" :gap="8" />
-    <Controls class="!bg-gray-800 !border-gray-700" />
-    <div>
-      <button
-        @click="nestSelectedNodes"
-        class="absolute top-4 right-4 z-10 bg-gray-800 rounded-lg border border-gray-700 shadow-lg px-4 py-2 text-gray-200 hover:bg-gray-900/50 transition-colors duration-200"
-      >
-        Nest Selected Nodes
-      </button>
-      <div
-        class="absolute top-4 left-4 z-10 bg-gray-800 rounded-lg border border-gray-700 shadow-lg"
-        style="max-height: calc(300px); overflow-y: auto"
-      >
-        <div
-          v-for="node in nodeTypes"
-          :key="node.type"
-          class="draggable-node text-xs bg-gray-800 hover:bg-gray-900/50 text-gray-200 mb-2 rounded-md cursor-move transition-colors duration-200 shadow-sm"
-          :draggable="true"
-          @dragstart="(event) => onDragStart(event, node)"
-          @click="addNode(node)"
-        >
-          {{ node.label }}
-        </div>
-      </div>
+  <div class="flow-editor">
+    <!-- Loading state -->
+    <div v-if="isLoading" class="loading-overlay">Loading nodes...</div>
+
+    <!-- Error state -->
+    <div v-if="loadError" class="error-message">
+      Error loading nodes: {{ loadError.message }}
     </div>
-  </VueFlow>
+
+    <!-- Flow content -->
+    <div class="flow-content">
+      <VueFlow
+        v-model="elements"
+        :default-viewport="{ zoom: 1.1 }"
+        :snap-to-grid="true"
+        :snap-grid="[16, 16]"
+        @dragover="onDragOver"
+        @nodeClick="({ node }) => onNodeClick(node)"
+        class="dark"
+        selection-key="Control"
+        multi-selection-key="Shift"
+        :pan-on-drag="false"
+        :selection-on-drag="true"
+        :nodes-draggable="true"
+        :nodes-connectable="true"
+        :elements-selectable="true"
+        :selection-mode="selectionMode"
+        :zoom-on-double-click="false"
+        :pan-on-scroll="false"
+        :node-types="nodeTypes"
+      >
+        <template #node-resizableGroup="nodeProps">
+          <div :style="nodeProps.style">
+            <div class="group-label">
+              {{ nodeProps.data?.label || "Group" }}
+            </div>
+            <NodeResizer
+              :min-width="200"
+              :min-height="100"
+              :is-visible="true"
+              :enable-top-left="false"
+              :enable-top-right="false"
+              :enable-bottom-left="false"
+              :enable-bottom-right="true"
+              :enable-edge-resize="false"
+              :line-style="{ stroke: 'none' }"
+            />
+          </div>
+        </template>
+        <Background pattern-color="#4B5563" :gap="8" />
+        <Controls class="!bg-gray-800 !border-gray-700" />
+        <div>
+          <button
+            @click="nestSelectedNodes"
+            class="absolute top-4 right-4 z-10 bg-gray-800 rounded-lg border border-gray-700 shadow-lg px-4 py-2 text-gray-200 hover:bg-gray-900/50 transition-colors duration-200"
+          >
+            Nest Selected Nodes
+          </button>
+          <div
+            class="absolute top-4 left-4 z-10 bg-gray-800 rounded-lg border border-gray-700 shadow-lg"
+            style="max-height: calc(300px); overflow-y: auto"
+          >
+            <div
+              v-for="node in nodeTypes"
+              :key="node.type"
+              class="draggable-node text-xs bg-gray-800 hover:bg-gray-900/50 text-gray-200 mb-2 rounded-md cursor-move transition-colors duration-200 shadow-sm"
+              :draggable="true"
+              @dragstart="(event) => onDragStart(event, node)"
+              @click="addNode(node)"
+            >
+              {{ node.label }}
+            </div>
+          </div>
+        </div>
+      </VueFlow>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, markRaw, watch } from "vue";
+import { ref, markRaw, watch, onMounted } from "vue";
 import { VueFlow, useVueFlow, SelectionMode, Position } from "@vue-flow/core";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
@@ -85,6 +100,8 @@ const { onConnect, addEdges, project, addNodes, updateNode } = vueFlow;
 const elements = ref([]);
 const selectionMode = ref(SelectionMode.Partial);
 const codeStore = useCodeStore();
+const isLoading = ref(false);
+const loadError = ref(null);
 let id = 1;
 
 // Node types initialization
@@ -267,8 +284,58 @@ const onDragOver = (event) => {
   event.preventDefault();
   event.dataTransfer.dropEffect = "move";
 };
+
+// Load nodes on mount
+onMounted(async () => {
+  try {
+    isLoading.value = true;
+    const nodes = await codeStore.loadNodes();
+
+    // Convert saved nodes to flow elements
+    elements.value = nodes.map((node) => ({
+      id: node.id,
+      type: node.type,
+      label: node.label,
+      position: node.position,
+      data: {
+        code: node.code,
+        nodeId: node.id,
+        agentPrompt: node.agentPrompt,
+      },
+      draggable: true,
+      sourcePosition: "right",
+      targetPosition: "left",
+    }));
+  } catch (error) {
+    loadError.value = error;
+    console.error("Failed to load nodes:", error);
+  } finally {
+    isLoading.value = false;
+  }
+});
 </script>
 
 <style scoped>
 /* Empty - all styles moved to flowEditor.css */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  z-index: 100;
+}
+
+.error-message {
+  color: #ff4444;
+  padding: 1rem;
+  background: #ffebee;
+  border-radius: 4px;
+  margin: 1rem;
+}
 </style>

@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import nodeTypes from "@/nodeData/nodeTypes.json";
+import { dbService } from "@/services/dbService";
 
 export const useCodeStore = defineStore("code", {
   state: () => ({
@@ -10,8 +11,29 @@ export const useCodeStore = defineStore("code", {
     block: null,
     agentPrompt: "",
     compiledCode: "",
+    isLoading: false,
+    loadError: null,
   }),
   actions: {
+    async loadNodes() {
+      this.isLoading = true;
+      this.loadError = null;
+      try {
+        const nodes = await dbService.getNodes();
+        this.nodeBlocks = nodes;
+        return nodes;
+      } catch (error) {
+        this.loadError = error;
+        throw error;
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    async saveNode(node) {
+      await dbService.saveNode(node);
+      this.nodeBlocks = await dbService.getNodes();
+    },
     updateNodeBlocks(blocks) {
       this.nodeBlocks = blocks;
       this.lastUpdateTimestamp = Date.now();
