@@ -258,7 +258,7 @@ Please update the original code based on these form values while maintaining the
 
     // Update store with new block code
     const codeStore = useCodeStore();
-    codeStore.updateNodeCode(jsonResponse.newCode);
+    codeStore.updateCompiledCode(jsonResponse.newCode);
 
     return {
       code: jsonResponse.newCode,

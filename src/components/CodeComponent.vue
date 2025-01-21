@@ -87,6 +87,11 @@ const selectedBlock = computed(() => {
   return nodeBlocks.value.find((block) => block.id === selectedNodeId.value);
 });
 
+// Add computed for current code
+const currentCode = computed(() => {
+  return compiledCode.value || (selectedBlock.value?.code ?? '');
+});
+
 // Width configuration variables
 const MIN_CODE_WIDTH = 0.3; // Minimum width for any section
 const MAX_CODE_WIDTH = 0.5; // Maximum width for any section
@@ -199,41 +204,27 @@ watch(
   { immediate: true }
 );
 
-// Watch for changes in compiledCode and update editor
-watch(compiledCode, (newCode) => {
-  console.log('[DEBUG] compiledCode changed:', newCode);
+// Watch for changes in currentCode and update editor
+watch(currentCode, (newCode) => {
+  console.log('[DEBUG] currentCode changed:', newCode);
   console.log('[DEBUG] editorInstance exists:', !!editorInstance);
   
-  if (editorInstance && newCode) {
-    console.log('[DEBUG] Updating editor content with compiled code');
-    editorInstance.setValue(newCode);
-    // Force a layout update
-    nextTick(() => {
-      editorInstance.layout();
-      editorInstance.focus();
-    });
-  }
-}, { immediate: true });
-
-// Watch for changes in selectedBlock and update editor
-watch(selectedBlock, (newBlock) => {
-  console.log('[DEBUG] selectedBlock changed:', newBlock);
-  console.log('[DEBUG] editorInstance exists:', !!editorInstance);
-  
-  if (editorInstance && newBlock) {
-    console.log('[DEBUG] Updating editor content with block code');
-    editorInstance.setValue(newBlock.code || '');
-    // Force a layout update
-    nextTick(() => {
-      editorInstance.layout();
-      editorInstance.focus();
-    });
+  if (editorInstance && newCode !== undefined) {
+    console.log('[DEBUG] Updating editor content');
+    const currentValue = editorInstance.getValue();
+    if (currentValue !== newCode) {
+      editorInstance.setValue(newCode);
+      // Force a layout update
+      nextTick(() => {
+        editorInstance.layout();
+        editorInstance.focus();
+      });
+    }
   }
 }, { immediate: true });
 
 // Update editor initialization
 const initEditor = async () => {
-  await nextTick();
   if (!monacoEditor.value) return;
 
   // Ensure theme is defined
@@ -275,18 +266,11 @@ const initEditor = async () => {
     },
   });
 
-  // Set editor font settings
   monaco.editor.setTheme("dark-modern");
-  monaco.editor.remeasureFonts();
-  monaco.editor.EditorOptions.fontSize.defaultValue = 10;
-  monaco.editor.EditorOptions.fontFamily.defaultValue =
-    "'Fira Code', 'Menlo', 'Consolas', monospace";
-  monaco.editor.EditorOptions.lineHeight.defaultValue = 20;
-  monaco.editor.EditorOptions.letterSpacing.defaultValue = 0.5;
 
-  // Create editor with initial value from compiled code or selected block
+  // Create editor with initial value
   editorInstance = monaco.editor.create(monacoEditor.value, {
-    value: compiledCode.value || selectedBlock.value?.code || "",
+    value: currentCode.value,
     language: "python",
     theme: "dark-modern",
     automaticLayout: true,
@@ -303,26 +287,13 @@ const initEditor = async () => {
     wordWrap: "on",
   });
 
-  // Set initial value after editor is created
-  if (compiledCode.value) {
-    editorInstance.setValue(compiledCode.value);
-  }
-
-  // Update store when content changes with debounce
-  let timeout;
+  // Update store when content changes
   editorInstance.onDidChangeModelContent(() => {
-    clearTimeout(timeout);
-    timeout = setTimeout(async () => {
-      await nextTick();
-      const value = editorInstance.getValue();
-      codeStore.updateNodeCode(value);
-    }, 100);
+    const newValue = editorInstance.getValue();
+    if (compiledCode.value !== newValue) {
+      codeStore.updateCompiledCode(newValue);
+    }
   });
-
-  // Force a layout update
-  await nextTick();
-  editorInstance.layout();
-  editorInstance.focus();
 };
 
 // Cleanup editor instance
