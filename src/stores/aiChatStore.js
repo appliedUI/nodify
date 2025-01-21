@@ -133,8 +133,6 @@ export const useAIStore = defineStore("ai", {
         //log
         const response = await updateCompiledCode(payload);
 
-        console.log("[STORE] Payload CODE:", payload.blockCode.code);
-        console.log("[STORE] Payload FORM:", payload.formData);
         // Update Monaco editor code via codeStore
         const codeStore = useCodeStore();
         codeStore.updateNodeCode(response.code);
