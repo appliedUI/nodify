@@ -21,7 +21,7 @@ const buildSystemMessage = (agentConfig, snippet) => {
                 "message": "Your main review comments (supports markdown formatting)",
                 "type": "info|warning|error|success",
                 "details": ["Specific suggestions or improvements (supports markdown formatting)"],
-                "code": "HTML form code which represents the code snippet. provide a 1:1 mapping to code to form elements"
+                "code": "HTML code which represents the code snippet. show form inputs for items the user can override like input fields, varibles, etc."
               }`,
   };
 };
