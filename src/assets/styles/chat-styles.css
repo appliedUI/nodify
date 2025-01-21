@@ -7,6 +7,8 @@
 .messages-container {
   scrollbar-width: thin;
   scrollbar-color: #4a5568 #2d3748;
+  padding: 0;
+  margin: 0;
 }
 
 .messages-container::-webkit-scrollbar {
@@ -34,7 +36,13 @@
   position: sticky;
   bottom: 0;
   width: 100%;
-  background-color: #1a1a1a;
+}
+.chat-input-tabs {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  background-color: #1f2a37;
+  z-index: 100;
 }
 
 textarea {

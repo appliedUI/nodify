@@ -2,7 +2,7 @@
   <div class="params-container text-xs" v-if="block">
     <!-- Tab System -->
     <div
-      class="text-sm font-medium text-center text-gray-500 border-b border-gray-200 dark:text-gray-400 dark:border-gray-700"
+      class="chat-input-tabs text-sm font-medium text-center text-gray-500 border-b border-gray-200 dark:text-gray-400 dark:border-gray-700"
     >
       <ul class="flex flex-wrap -mb-px">
         <li class="me-2">
@@ -14,7 +14,7 @@
               'border-transparent hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300':
                 activeTab !== 'chat',
             }"
-            class="inline-block p-4 border-b-2 rounded-t-lg transition-all duration-200"
+            class="inline-block p-1 border-b-2 rounded-t-lg transition-all duration-200"
           >
             Chat
           </button>
@@ -28,7 +28,7 @@
               'border-transparent hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300':
                 activeTab !== 'connections',
             }"
-            class="inline-block p-4 border-b-2 rounded-t-lg transition-all duration-200"
+            class="inline-block p-1 border-b-2 rounded-t-lg transition-all duration-200"
           >
             Connections
           </button>

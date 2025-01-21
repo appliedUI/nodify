@@ -1,0 +1,83 @@
+Codebase Relationships and Sequence Diagram
+===========================================
+
+1. Codebase Overview
+--------------------
+- nodeTypes.json: Contains predefined code templates and configurations
+  - Each node has: id, type, label, code, description, agentPrompt, agentConfig
+- ChatComponent.vue: Handles chat interface and message display
+  - Receives code review results from aiChat.js
+  - Displays formatted messages with code suggestions
+- aiChat.js: AI service layer
+  - Handles communication with OpenAI API
+  - Processes code reviews and generates responses
+- CodeComponent.vue: Main code editor interface
+  - Contains Monaco editor for code editing
+  - Manages code blocks and their parameters
+- CompiledComponent.vue: Renders interactive HTML forms from chat responses
+  - Extracts and displays code/HTML from chat messages
+  - Handles form submissions for code updates
+
+2. Sequence Diagram: Code Review Pipeline with CompiledComponent
+--------------------------------------------------------------
++-------------------+       +-------------------+       +-------------------+       +-------------------+       +-------------------+
+|  CodeComponent.vue |       |    aiChat.js      |       |   OpenAI API      |       | ChatComponent.vue |       | CompiledComponent |
++-------------------+       +-------------------+       +-------------------+       +-------------------+       +-------------------+
+        |                           |                           |                           |                           |
+        | 1. User selects node       |                           |                           |                           |
+        |--------------------------->|                           |                           |                           |
+        |                           |                           |                           |                           |
+        | 2. Get node config         |                           |                           |                           |
+        |<---------------------------|                           |                           |                           |
+        |                           |                           |                           |                           |
+        | 3. Send code for review    |                           |                           |                           |
+        |--------------------------->|                           |                           |                           |
+        |                           | 4. Build system message    |                           |                           |
+        |                           |--------------------------->|                           |                           |
+        |                           | 5. Build user message      |                           |                           |
+        |                           |--------------------------->|                           |                           |
+        |                           |                           |                           |                           |
+        |                           | 6. Process OpenAI response |                           |                           |
+        |                           |<---------------------------|                           |                           |
+        |                           |                           |                           |                           |
+        | 7. Receive review results  |                           |                           |                           |
+        |<---------------------------|                           |                           |                           |
+        |                           |                           |                           |                           |
+        | 8. Display formatted       |                           |                           |                           |
+        |    review in chat          |                           |                           |                           |
+        |------------------------------------------------------->|                           |                           |
+        |                           |                           |                           |                           |
+        | 9. Extract HTML/code       |                           |                           |                           |
+        |    from chat response      |                           |                           |                           |
+        |------------------------------------------------------->|                           |
+        |                           |                           |                           |                           |
+        | 10. Render interactive     |                           |                           |                           |
+        |     forms                  |                           |                           |                           |
+        |<-------------------------------------------------------|                           |
+        |                           |                           |                           |                           |
+        | 11. User interacts with    |                           |                           |                           |
+        |     form                   |                           |                           |                           |
+        |------------------------------------------------------->|                           |
+        |                           |                           |                           |                           |
+        | 12. Submit form updates    |                           |                           |                           |
+        |<-------------------------------------------------------|                           |
+        |                           |                           |                           |                           |
+
+3. Key Data Flow
+----------------
+nodeTypes.json -> CodeComponent.vue (Initial code load)
+CodeComponent.vue -> aiChat.js (Code review request)
+aiChat.js -> OpenAI API (Code processing)
+OpenAI API -> aiChat.js (Review response)
+aiChat.js -> ChatComponent.vue (Formatted review)
+ChatComponent.vue -> CompiledComponent.vue (Extract HTML/code)
+CompiledComponent.vue -> ChatComponent.vue (Form updates)
+
+4. Main Components Interaction
+------------------------------
++-------------------+       +-------------------+       +-------------------+       +-------------------+
+|  CodeComponent.vue |<---->|    aiChat.js      |<---->| ChatComponent.vue |<---->| CompiledComponent |
++-------------------+       +-------------------+       +-------------------+       +-------------------+
+        ^                           |                           ^                           ^
+        |                           v                           |                           |
+        +---------------------> nodeTypes.json <----------------+---------------------------+ 

@@ -61,14 +61,14 @@
     </div>
 
     <!-- Fixed chat input at bottom -->
-    <div class="chat-input-container bg-gray-900 border-t border-gray-700 p-4">
+    <div class="chat-input-container bg-transparent p-0">
       <div class="flex gap-2">
         <textarea
           v-model="currentMessage"
           @keydown.enter.prevent="sendMessage"
           @keydown.shift.enter="handleNewLine"
           placeholder="Ask about the code..."
-          class="flex-1 bg-gray-800 text-gray-200 rounded-lg p-2 min-h-[40px] max-h-[120px] resize-y focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+          class="text-xs flex-1 bg-gray-800 text-gray-200 rounded-lg p-2 min-h-[40px] max-h-[120px] resize-y focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
           rows="1"
           aria-label="Chat input"
           :disabled="isLoading"
@@ -76,7 +76,7 @@
         <button
           @click="sendMessage"
           :disabled="isLoading || !currentMessage.trim()"
-          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors h-[42px]"
+          class="px-2 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors h-[42px]"
           aria-label="Send message"
         >
           <svg
