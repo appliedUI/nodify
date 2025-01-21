@@ -1,0 +1,151 @@
+.chat-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.messages-container {
+  scrollbar-width: thin;
+  scrollbar-color: #4a5568 #2d3748;
+}
+
+.messages-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  background: #2d3748;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  background-color: #4a5568;
+  border-radius: 4px;
+}
+
+.message {
+  transition: all 0.2s ease-in-out;
+}
+
+.message:hover {
+  transform: translateY(-1px);
+}
+
+.chat-input-container {
+  position: sticky;
+  bottom: 0;
+  width: 100%;
+  background-color: #1a1a1a;
+}
+
+textarea {
+  line-height: 1.5;
+  overflow-y: auto;
+}
+
+textarea:focus {
+  outline: none;
+  ring: 2px solid #3b82f6;
+}
+
+.message-type {
+  font-weight: 500;
+  white-space: pre-line;
+}
+
+.type-info {
+  color: #3b82f6;
+}
+
+.type-warning {
+  color: #f59e0b;
+}
+
+.type-error {
+  color: #ef4444;
+}
+
+.type-success {
+  color: #10b981;
+}
+
+.markdown-content :deep(pre) {
+  background-color: #1a1a1a;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 0.5rem 0;
+}
+
+.markdown-content :deep(code) {
+  background-color: #2d3748;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-family: monospace;
+}
+
+.markdown-content :deep(a) {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+.markdown-content :deep(ul) {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+}
+
+.markdown-content :deep(ol) {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+}
+
+.markdown-content :deep(blockquote) {
+  border-left: 4px solid #4a5568;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: #9ca3af;
+}
+
+.markdown-content :deep(p) {
+  margin: 0.5rem 0;
+}
+
+.markdown-content :deep(h1),
+.markdown-content :deep(h2),
+.markdown-content :deep(h3),
+.markdown-content :deep(h4),
+.markdown-content :deep(h5),
+.markdown-content :deep(h6) {
+  font-weight: 600;
+  margin: 1rem 0 0.5rem 0;
+}
+
+.message-content :deep(input),
+.message-content :deep(select),
+.message-content :deep(textarea) {
+  background-color: #1f2937;
+  color: #e5e7eb;
+  border: 1px solid #4b5563;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  margin: 0.25rem 0;
+  width: 100%;
+}
+
+.message-content :deep(input:focus),
+.message-content :deep(select:focus),
+.message-content :deep(textarea:focus) {
+  outline: none;
+  border-color: #3b82f6;
+  ring: 2px solid #3b82f6;
+}
+
+.message-content :deep(input::placeholder),
+.message-content :deep(select::placeholder),
+.message-content :deep(textarea::placeholder) {
+  color: #9ca3af;
+}
+
+.message-content :deep(option) {
+  background-color: #1f2937;
+  color: #e5e7eb;
+}

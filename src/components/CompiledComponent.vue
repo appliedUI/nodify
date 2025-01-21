@@ -1,9 +1,8 @@
 <template>
   <div class="compiled-container">
-    <h2 class="text-lg font-bold mb-4">Compiled Code</h2>
     <div
       v-if="compiledCode"
-      class="compiled-content p-4 bg-gray-800 rounded-lg"
+      class="compiled-content bg-gray-800 rounded-lg"
       v-html="compiledCode"
     ></div>
     <p v-else class="text-gray-400 italic">No compiled code available yet.</p>
@@ -24,7 +23,7 @@ const compiledCode = computed(() => store.getLatestCode);
 .compiled-container {
   height: 100%;
   overflow-y: auto;
-  padding: 1rem;
+  font-size: 12px;
 }
 
 /* Style form inputs within compiled content */
@@ -38,6 +37,12 @@ const compiledCode = computed(() => store.getLatestCode);
   padding: 0.5rem;
   margin: 0.25rem 0;
   width: 100%;
+  font-size: 12px;
+}
+
+.compiled-content :deep(label) {
+  font-size: 12px;
+  color: #10c9e9;
 }
 
 .compiled-content :deep(input:focus),
@@ -57,5 +62,16 @@ const compiledCode = computed(() => store.getLatestCode);
 .compiled-content :deep(option) {
   background-color: #1f2937;
   color: #e5e7eb;
+}
+
+/* style button */
+.compiled-content :deep(button) {
+  background-color: #14181e;
+  color: #e5e7eb;
+  border: 1px solid #4b5563;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  margin: 0.25rem 0;
+  width: 100%;
 }
 </style>

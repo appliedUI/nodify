@@ -90,13 +90,13 @@ const selectedBlock = computed(() => {
 });
 
 // Width configuration variables
-const MIN_CODE_WIDTH = 0.2; // Minimum width of code section (50% of window)
-const MAX_CODE_WIDTH = 0.7; // Maximum width of code section (70% of window)
-const MIN_COMPILED_WIDTH = 0.15; // Minimum width of compiled section (15% of window)
-const MAX_COMPILED_WIDTH = 1; // Maximum width of compiled section (30% of window)
-const INITIAL_CODE_WIDTH = 0.6; // Initial width of code section (60% of window)
-const INITIAL_PARAMS_WIDTH = 0.2; // Initial width of params section (20% of window)
-const INITIAL_COMPILED_WIDTH = 0.2; // Initial width of compiled section (20% of window)
+const MIN_CODE_WIDTH = 0.3; // Minimum width for any section
+const MAX_CODE_WIDTH = 0.5; // Maximum width for any section
+const MIN_COMPILED_WIDTH = 0.3; // Minimum width for any section
+const MAX_COMPILED_WIDTH = 0.5; // Maximum width for any section
+const INITIAL_CODE_WIDTH = 0.33; // Equal width for code section
+const INITIAL_PARAMS_WIDTH = 0.33; // Equal width for params section
+const INITIAL_COMPILED_WIDTH = 0.33; // Equal width for compiled section
 
 const container = ref(null);
 const codeWidth = ref(window.innerWidth * INITIAL_CODE_WIDTH);
@@ -132,17 +132,21 @@ const onMouseMove = (e) => {
       window.innerWidth * MIN_CODE_WIDTH,
       Math.min(window.innerWidth * MAX_CODE_WIDTH, newCodeWidth)
     );
-    paramsWidth.value =
-      window.innerWidth - codeWidth.value - compiledWidth.value;
+    // Calculate remaining width for params and compiled sections
+    const remainingWidth = window.innerWidth - codeWidth.value;
+    paramsWidth.value = remainingWidth / 2;
+    compiledWidth.value = remainingWidth / 2;
   } else if (currentResizer === "compiled") {
-    // Resize compiled section independently with 1:1 movement
-    const newCompiledWidth = startWidth - delta; // Note the minus sign here
+    // Resize compiled section and adjust params section
+    const newCompiledWidth = startWidth - delta;
     compiledWidth.value = Math.max(
       window.innerWidth * MIN_COMPILED_WIDTH,
       Math.min(window.innerWidth * MAX_COMPILED_WIDTH, newCompiledWidth)
     );
-    paramsWidth.value =
-      window.innerWidth - codeWidth.value - compiledWidth.value;
+    // Calculate remaining width for code and params sections
+    const remainingWidth = window.innerWidth - compiledWidth.value;
+    codeWidth.value = remainingWidth / 2;
+    paramsWidth.value = remainingWidth / 2;
   }
 };
 

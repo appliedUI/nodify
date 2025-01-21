@@ -66,16 +66,41 @@
         <textarea
           v-model="currentMessage"
           @keydown.enter.prevent="sendMessage"
+          @keydown.shift.enter="handleNewLine"
           placeholder="Ask about the code..."
-          class="flex-1 bg-gray-800 text-gray-200 rounded-lg p-2 min-h-[40px] max-h-[120px] resize-y"
+          class="flex-1 bg-gray-800 text-gray-200 rounded-lg p-2 min-h-[40px] max-h-[120px] resize-y focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
           rows="1"
+          aria-label="Chat input"
+          :disabled="isLoading"
         ></textarea>
         <button
           @click="sendMessage"
-          :disabled="isLoading"
-          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
+          :disabled="isLoading || !currentMessage.trim()"
+          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors h-[42px]"
+          aria-label="Send message"
         >
-          Send
+          <svg
+            v-if="isLoading"
+            class="animate-spin h-5 w-5 text-white"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            ></circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+          <span v-else>Send</span>
         </button>
       </div>
     </div>
@@ -203,159 +228,23 @@ provide(
     return lastAssistantMessage?.content?.code || "";
   })
 );
+
+const handleNewLine = (event) => {
+  const textarea = event.target;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+
+  // Insert newline at cursor position
+  currentMessage.value =
+    currentMessage.value.substring(0, start) +
+    "\n" +
+    currentMessage.value.substring(end);
+
+  // Move cursor to after the newline
+  nextTick(() => {
+    textarea.selectionStart = textarea.selectionEnd = start + 1;
+  });
+};
 </script>
 
-<style scoped>
-.chat-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.messages-container {
-  scrollbar-width: thin;
-  scrollbar-color: #4a5568 #2d3748;
-}
-
-.messages-container::-webkit-scrollbar {
-  width: 8px;
-}
-
-.messages-container::-webkit-scrollbar-track {
-  background: #2d3748;
-}
-
-.messages-container::-webkit-scrollbar-thumb {
-  background-color: #4a5568;
-  border-radius: 4px;
-}
-
-.message {
-  transition: all 0.2s ease-in-out;
-}
-
-.message:hover {
-  transform: translateY(-1px);
-}
-
-.chat-input-container {
-  position: sticky;
-  bottom: 0;
-  width: 100%;
-  background-color: #1a1a1a;
-}
-
-textarea {
-  line-height: 1.5;
-  overflow-y: auto;
-}
-
-textarea:focus {
-  outline: none;
-  ring: 2px solid #3b82f6;
-}
-
-.message-type {
-  font-weight: 500;
-  white-space: pre-line; /* Preserve line breaks in the message */
-}
-
-.type-info {
-  color: #3b82f6;
-}
-
-.type-warning {
-  color: #f59e0b;
-}
-
-.type-error {
-  color: #ef4444;
-}
-
-.type-success {
-  color: #10b981;
-}
-
-.markdown-content :deep(pre) {
-  background-color: #1a1a1a;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  overflow-x: auto;
-  margin: 0.5rem 0;
-}
-
-.markdown-content :deep(code) {
-  background-color: #2d3748;
-  padding: 0.2rem 0.4rem;
-  border-radius: 0.25rem;
-  font-family: monospace;
-}
-
-.markdown-content :deep(a) {
-  color: #3b82f6;
-  text-decoration: underline;
-}
-
-.markdown-content :deep(ul) {
-  list-style-type: disc;
-  padding-left: 1.5rem;
-}
-
-.markdown-content :deep(ol) {
-  list-style-type: decimal;
-  padding-left: 1.5rem;
-}
-
-.markdown-content :deep(blockquote) {
-  border-left: 4px solid #4a5568;
-  padding-left: 1rem;
-  margin: 1rem 0;
-  color: #9ca3af;
-}
-
-.markdown-content :deep(p) {
-  margin: 0.5rem 0;
-}
-
-.markdown-content :deep(h1),
-.markdown-content :deep(h2),
-.markdown-content :deep(h3),
-.markdown-content :deep(h4),
-.markdown-content :deep(h5),
-.markdown-content :deep(h6) {
-  font-weight: 600;
-  margin: 1rem 0 0.5rem 0;
-}
-
-/* Add these new styles for form inputs within v-html content */
-.message-content :deep(input),
-.message-content :deep(select),
-.message-content :deep(textarea) {
-  background-color: #1f2937;
-  color: #e5e7eb;
-  border: 1px solid #4b5563;
-  border-radius: 0.375rem;
-  padding: 0.5rem;
-  margin: 0.25rem 0;
-  width: 100%;
-}
-
-.message-content :deep(input:focus),
-.message-content :deep(select:focus),
-.message-content :deep(textarea:focus) {
-  outline: none;
-  border-color: #3b82f6;
-  ring: 2px solid #3b82f6;
-}
-
-.message-content :deep(input::placeholder),
-.message-content :deep(select::placeholder),
-.message-content :deep(textarea::placeholder) {
-  color: #9ca3af;
-}
-
-.message-content :deep(option) {
-  background-color: #1f2937;
-  color: #e5e7eb;
-}
-</style>
+<style scoped></style>

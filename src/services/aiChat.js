@@ -21,7 +21,7 @@ const buildSystemMessage = (agentConfig, snippet) => {
                 "message": "Your main review comments (supports markdown formatting)",
                 "type": "info|warning|error|success",
                 "details": ["Specific suggestions or improvements (supports markdown formatting)"],
-                "code": "produce HTML code which can be used to override core parts of the code snippet. show form inputs for items the user can override like input fields, varibles, etc."
+                "code": "produce HTML code which can be used to override common parts of the code snippet. show form inputs for items the user can override like input fields, varibles, etc. do not include any other code or text. do not format the code in any way. no <br> tags or other style tags. always add a button to update the code. always label the form inputs and buttons. Always use a button element to update the code. HTML code should show only parts of the snippet that can be overridden. Do not show the entire snippet. never add styles, spacing."
               }`,
   };
 };
