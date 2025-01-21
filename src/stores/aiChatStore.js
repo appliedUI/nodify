@@ -5,6 +5,7 @@ import {
   sendFollowUpMessage,
   updateCompiledCode,
 } from "../services/aiChat";
+import { useCodeStore } from "./codeStore";
 
 export const useAIStore = defineStore("ai", {
   state: () => ({
@@ -129,9 +130,16 @@ export const useAIStore = defineStore("ai", {
 
     async handleCompileSubmit(payload) {
       try {
+        //log
         const response = await updateCompiledCode(payload);
-        console.log("[STORE] Received response from AI service:", response);
-        
+
+        console.log("[STORE] Payload CODE:", payload.blockCode.code);
+        console.log("[STORE] Payload FORM:", payload.formData);
+        // Update Monaco editor code via codeStore
+        const codeStore = useCodeStore();
+        codeStore.updateNodeCode(response.code);
+        //log
+        console.log("[STORE] Monaco editor code updated:", response.code);
         // Add the interaction to chat history
         this.chatHistory.push({
           role: "assistant",
@@ -139,11 +147,10 @@ export const useAIStore = defineStore("ai", {
             message: "Code updated based on form submission",
             type: "success",
             details: [],
-            code: response.code
+            code: response.code,
           },
           timestamp: new Date().toISOString(),
         });
-
         return response;
       } catch (error) {
         console.error("[STORE] Error handling compile submission:", error);

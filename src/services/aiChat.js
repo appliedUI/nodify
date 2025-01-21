@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import nodeTypes from "@/nodeData/nodeTypes.json";
+import { useCodeStore } from "@/stores/codeStore";
 
 const openai = new OpenAI({
   apiKey: import.meta.env.VITE_OPENAI_API_KEY,
@@ -206,13 +207,13 @@ export const sendAgentMessage = async (agentConfig, userPrompt) => {
 export const updateCompiledCode = async (payload) => {
   try {
     console.log("[AI Service] Updating code with payload:", payload);
-    
+
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
-          content: `You are a code generation assistant. Your task is to generate new code based on user input values.`
+          content: `You are a code generation assistant. Your task is to generate new code based on user input values.`,
         },
         {
           role: "user",
@@ -221,16 +222,20 @@ ${payload.compiledCode}
 
 Form values submitted: ${JSON.stringify(payload.formData)}
 
-Please update the code based on these form values while maintaining the same structure and functionality.`
-        }
+Please update the code based on these form values while maintaining the same structure and functionality. the code retuned my be in the same language as the 'Original code' `,
+        },
       ],
       temperature: 0.7,
-      max_tokens: 1000
+      max_tokens: 1000,
     });
+
+    // Update store with new compiled code
+    const codeStore = useCodeStore();
+    codeStore.updateCompiledCode(response.choices[0].message.content);
 
     return {
       code: response.choices[0].message.content,
-      usage: response.usage
+      usage: response.usage,
     };
   } catch (error) {
     console.error("Error updating compiled code:", error);

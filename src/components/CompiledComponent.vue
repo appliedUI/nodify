@@ -11,80 +11,80 @@
 </template>
 
 <script setup>
-import { useAIStore } from '../stores/aiChatStore'
-import { computed, onMounted, onUpdated, watch, nextTick } from 'vue'
+import { useAIStore } from "../stores/aiChatStore";
+import { useCodeStore } from "../stores/codeStore";
+import { computed, onMounted, onUpdated, watch, nextTick } from "vue";
 
-const store = useAIStore()
-const compiledCode = computed(() => store.getLatestCode)
+const store = useAIStore();
+const compiledCode = computed(() => store.getLatestCode);
+const codeStore = useCodeStore();
+const blockCode = computed(() => codeStore.block);
 
 // Handle form submission
 const handleFormSubmit = async (event) => {
-  event.preventDefault()
-  console.log("[Component] Form submission started")
-  
-  const form = event.target
-  const formData = new FormData(form)
-  const formValues = {}
+  const form = event.target;
+  const formData = new FormData(form);
+  const formValues = {};
 
   formData.forEach((value, key) => {
-    formValues[key] = value
-  })
-
-  console.log("[Component] Form values collected:", formValues)
-  console.log("[Component] Current compiled code:", compiledCode.value)
+    formValues[key] = value;
+  });
 
   try {
     const payload = {
       formData: formValues,
+      blockCode: blockCode.value,
       compiledCode: compiledCode.value,
+    };
+
+    // Prevent duplicate submissions
+    if (!event.defaultPrevented) {
+      event.preventDefault();
+      await store.handleCompileSubmit(payload);
     }
-    console.log("[Component] Sending payload to store:", payload)
-    
-    await store.handleCompileSubmit(payload)
-    console.log('[Component] Form and code submitted successfully')
   } catch (error) {
-    console.error('[Component] Error submitting form and code:', error)
+    console.error("[Component] Error submitting form and code:", error);
   }
-}
+};
 
 // Track if listeners are attached
-let listenersAttached = false
+let listenersAttached = false;
 
 const attachFormListeners = () => {
-  if (listenersAttached) return
+  if (listenersAttached) return;
 
   nextTick(() => {
-    console.log("[Component] Attaching form listeners")
-    const forms = document.querySelectorAll('.compiled-content form')
-    console.log("[Component] Found forms:", forms.length)
-    
+    console.log("[Component] Attaching form listeners");
+    const forms = document.querySelectorAll(".compiled-content form");
+    console.log("[Component] Found forms:", forms.length);
+
     forms.forEach((form) => {
       // Remove any existing listeners first to prevent duplicates
-      form.removeEventListener('submit', handleFormSubmit)
-      form.addEventListener('submit', handleFormSubmit)
-      console.log("[Component] Attached listener to form")
-    })
-    
-    listenersAttached = true
-  })
-}
+      form.removeEventListener("submit", handleFormSubmit);
+      form.addEventListener("submit", handleFormSubmit);
+      console.log("[Component] Attached listener to form");
+    });
+
+    listenersAttached = true;
+  });
+};
 
 // Watch for compiledCode changes and attach event listeners
 watch(compiledCode, () => {
-  listenersAttached = false
-  attachFormListeners()
-})
+  listenersAttached = false;
+  attachFormListeners();
+});
 
 // Attach listeners on component mount
 onMounted(() => {
-  attachFormListeners()
-})
+  attachFormListeners();
+});
 
 // Reset listeners on update
 onUpdated(() => {
-  listenersAttached = false
-  attachFormListeners()
-})
+  listenersAttached = false;
+  attachFormListeners();
+});
 
 // Add styles for form inputs in compiled code
 </script>

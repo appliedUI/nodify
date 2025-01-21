@@ -81,7 +81,7 @@ onBeforeMount(() => {
 });
 
 const codeStore = useCodeStore();
-const { nodeBlocks, selectedNodeId } = storeToRefs(codeStore);
+const { nodeBlocks, selectedNodeId, compiledCode } = storeToRefs(codeStore);
 
 // Add computed property for selectedBlock
 const selectedBlock = computed(() => {
@@ -233,6 +233,14 @@ watch(
   { immediate: true }
 );
 
+// Add watcher for compiled code
+watch(compiledCode, (newCode) => {
+  if (editorInstance && newCode) {
+    editorInstance.setValue(newCode);
+    editorInstance.getModel()?.pushStackElement();
+  }
+});
+
 // Update editor initialization
 const initEditor = async () => {
   await nextTick();
@@ -286,9 +294,9 @@ const initEditor = async () => {
   monaco.editor.EditorOptions.lineHeight.defaultValue = 20;
   monaco.editor.EditorOptions.letterSpacing.defaultValue = 0.5;
 
-  // Create editor with dark theme
+  // Create editor with initial value from compiled code or selected block
   editorInstance = monaco.editor.create(monacoEditor.value, {
-    value: selectedBlock.value?.code || "",
+    value: compiledCode.value || selectedBlock.value?.code || "",
     language: "python",
     theme: "dark-modern",
     automaticLayout: true,

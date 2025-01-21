@@ -9,6 +9,7 @@ export const useCodeStore = defineStore("code", {
     nodeBlocks: [],
     block: null,
     agentPrompt: "",
+    compiledCode: "",
   }),
   actions: {
     updateNodeBlocks(blocks) {
@@ -48,6 +49,10 @@ export const useCodeStore = defineStore("code", {
       }
       this.lastUpdateTimestamp = Date.now();
     },
+    updateCompiledCode(code) {
+      this.compiledCode = code;
+      this.lastUpdateTimestamp = Date.now();
+    },
   },
   getters: {
     formattedNodeCode: (state) => {
@@ -58,6 +63,9 @@ export const useCodeStore = defineStore("code", {
         (block) => block.id === state.selectedNodeId
       );
       return selectedNode?.code || "";
+    },
+    formattedCompiledCode: (state) => {
+      return state.compiledCode ? state.compiledCode.trim() : "";
     },
   },
 });
