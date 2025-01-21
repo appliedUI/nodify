@@ -6,11 +6,9 @@
       :style="{ width: `${codeWidth}px` }"
     >
       <div
-        v-if="selectedBlock"
         class="code-block h-full"
         ref="monacoEditor"
       ></div>
-      <div v-else class="p-4 text-gray-400">Select a node to edit its code</div>
     </div>
     <div
       class="resize-handle bg-gray-700 hover:bg-gray-600 w-1 h-full cursor-col-resize"
@@ -201,45 +199,37 @@ watch(
   { immediate: true }
 );
 
-watch(
-  selectedBlock,
-  async (newVal) => {
-    await nextTick();
-
-    if (!editorInstance) {
-      await initEditor();
-      return;
-    }
-
-    if (newVal) {
-      const currentValue = editorInstance.getValue();
-      const newCode = newVal.code || "";
-
-      if (newCode !== currentValue) {
-        editorInstance.setValue(newCode);
-
-        // Force layout update and focus
-        await nextTick();
-        editorInstance.layout();
-        editorInstance.focus();
-
-        // Reset undo stack to prevent undoing to previous node's content
-        editorInstance.getModel()?.pushStackElement();
-      }
-    } else {
-      editorInstance.setValue("");
-    }
-  },
-  { immediate: true }
-);
-
-// Add watcher for compiled code
+// Watch for changes in compiledCode and update editor
 watch(compiledCode, (newCode) => {
+  console.log('[DEBUG] compiledCode changed:', newCode);
+  console.log('[DEBUG] editorInstance exists:', !!editorInstance);
+  
   if (editorInstance && newCode) {
+    console.log('[DEBUG] Updating editor content with compiled code');
     editorInstance.setValue(newCode);
-    editorInstance.getModel()?.pushStackElement();
+    // Force a layout update
+    nextTick(() => {
+      editorInstance.layout();
+      editorInstance.focus();
+    });
   }
-});
+}, { immediate: true });
+
+// Watch for changes in selectedBlock and update editor
+watch(selectedBlock, (newBlock) => {
+  console.log('[DEBUG] selectedBlock changed:', newBlock);
+  console.log('[DEBUG] editorInstance exists:', !!editorInstance);
+  
+  if (editorInstance && newBlock) {
+    console.log('[DEBUG] Updating editor content with block code');
+    editorInstance.setValue(newBlock.code || '');
+    // Force a layout update
+    nextTick(() => {
+      editorInstance.layout();
+      editorInstance.focus();
+    });
+  }
+}, { immediate: true });
 
 // Update editor initialization
 const initEditor = async () => {
@@ -311,8 +301,12 @@ const initEditor = async () => {
     },
     fixedOverflowWidgets: true,
     wordWrap: "on",
-    wrappingStrategy: "advanced",
   });
+
+  // Set initial value after editor is created
+  if (compiledCode.value) {
+    editorInstance.setValue(compiledCode.value);
+  }
 
   // Update store when content changes with debounce
   let timeout;

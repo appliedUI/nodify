@@ -52,6 +52,17 @@ export const useCodeStore = defineStore("code", {
     updateCompiledCode(code) {
       this.compiledCode = code;
       this.lastUpdateTimestamp = Date.now();
+
+      // If there's a selected node, update its code as well
+      if (this.selectedNodeId) {
+        const selectedBlock = this.nodeBlocks.find(
+          (block) => block.id === this.selectedNodeId
+        );
+        if (selectedBlock) {
+          selectedBlock.code = code;
+          this.nodeCode = code;
+        }
+      }
     },
   },
   getters: {
