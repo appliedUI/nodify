@@ -261,7 +261,8 @@ Please update the original code based on these form values while maintaining the
     codeStore.updateCompiledCode(jsonResponse.newCode);
 
     return {
-      code: jsonResponse.newCode,
+      code: payload.compiledCode, // Return original HTML structure
+      newCode: jsonResponse.newCode, // Return new code separately
       usage: response.usage,
     };
   } catch (error) {

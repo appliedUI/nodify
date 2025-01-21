@@ -141,10 +141,15 @@ export const useAIStore = defineStore("ai", {
             message: "Code updated based on form submission",
             type: "success",
             details: [],
-            code: response.code,
+            code: response.code, // This will now be the original HTML structure
           },
           timestamp: new Date().toISOString(),
         });
+
+        // Update the underlying code in codeStore
+        const codeStore = useCodeStore();
+        codeStore.updateCompiledCode(response.newCode);
+        
         return response;
       } catch (error) {
         console.error("[STORE] Error handling compile submission:", error);
