@@ -134,6 +134,17 @@ export const useAIStore = defineStore("ai", {
         const response = await updateCompiledCode(payload);
         //log
         console.log("[STORE] Response from updateCompiledCode:", response);
+        //push to chatHistory
+        this.chatHistory.push({
+          role: "assistant",
+          content: {
+            message: "Code updated based on form submission",
+            type: "success",
+            details: [],
+            code: response.code,
+          },
+          timestamp: new Date().toISOString(),
+        });
         return response;
       } catch (error) {
         console.error("[STORE] Error handling compile submission:", error);
