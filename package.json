@@ -15,6 +15,7 @@
     "@vue-flow/core": "^1.42.1",
     "@vue-flow/node-resizer": "^1.4.0",
     "highlight.js": "^11.11.1",
+    "markdown-it": "^14.1.0",
     "monaco-editor": "^0.52.2",
     "openai": "^4.79.1",
     "pinia": "^2.3.0",

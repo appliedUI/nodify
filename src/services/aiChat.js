@@ -136,12 +136,14 @@ export const sendAgentMessage = async (agentConfig, userPrompt) => {
     const systemMessage = {
       role: "system",
       content: `You are ${agentConfig.name}, an AI assistant focused on helping users with their code and technical questions. 
-                Format your responses as JSON with the following structure:
-                {
-                  "message": "Your main response message",
-                  "type": "info|warning|error|success",
-                  "details": ["Additional details or suggestions if any"]
-                }`,
+                Format your responses as markdown text. Use markdown formatting for:
+                - Code blocks: \`\`\`language\ncode\n\`\`\`
+                - Inline code: \`code\`
+                - Lists: * or - for unordered, 1. for ordered
+                - Headings: #, ##, ###
+                - Links: [text](url)
+                - Emphasis: *italic*, **bold**
+                - Blockquotes: > text`,
     };
 
     console.log("[SERVICE] Sending chat message to OpenAI", {
@@ -158,12 +160,11 @@ export const sendAgentMessage = async (agentConfig, userPrompt) => {
 
     const messages = [systemMessage, userMessage];
     const response = await openai.chat.completions.create({
-      model: agentConfig.model || "gpt-4o-mini",
+      model: agentConfig.model || "gpt-4",
       messages: messages,
       temperature: agentConfig.temperature,
       max_tokens: agentConfig.maxTokens,
       top_p: agentConfig.topP,
-      response_format: { type: "json_object" }
     });
 
     console.log("[SERVICE] Received OpenAI chat response", {
@@ -171,10 +172,8 @@ export const sendAgentMessage = async (agentConfig, userPrompt) => {
       responseLength: response.choices[0].message.content.length,
     });
 
-    const jsonResponse = JSON.parse(response.choices[0].message.content);
-
     return {
-      response: jsonResponse,
+      response: response.choices[0].message.content,
       usage: response.usage,
       agentId: agentConfig.id,
     };

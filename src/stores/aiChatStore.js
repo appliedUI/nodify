@@ -49,10 +49,10 @@ export const useAIStore = defineStore("ai", {
         const response = await sendAgentMessage(this.agentConfig, message);
         console.log("[STORE] Received AI response:", response);
 
-        // Add AI response to chat history
+        // Add AI response to chat history as markdown content
         this.chatHistory.push({
           role: "assistant",
-          content: response.response,
+          content: response.response, // Store raw markdown content
           timestamp: new Date().toISOString(),
         });
       } catch (error) {
