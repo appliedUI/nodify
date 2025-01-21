@@ -23,7 +23,7 @@
     "agentConfig": {
       "model": "gpt-4o-mini",
       "temperature": 0.8,
-      "maxTokens": 1500,
+      "maxTokens": 1000,
       "topP": 1.0
     }
   },
@@ -37,7 +37,7 @@
     "agentConfig": {
       "model": "gpt-4o-mini",
       "temperature": 0.8,
-      "maxTokens": 1500,
+      "maxTokens": 1000,
       "topP": 1.0
     }
   },
