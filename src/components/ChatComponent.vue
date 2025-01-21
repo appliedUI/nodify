@@ -23,7 +23,6 @@
               typeof message.content === 'object'
             "
           >
-            <div v-html="message.content.code"></div>
             <!-- Main message with type styling -->
             <div
               :class="['message-type', `type-${message.content.type}`]"
@@ -84,7 +83,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch, nextTick, onMounted } from "vue";
+import { computed, ref, watch, nextTick, onMounted, provide } from "vue";
 import { useCodeStore } from "@/stores/codeStore";
 import { useAIStore } from "@/stores/aiChatStore";
 import MarkdownIt from "markdown-it";
@@ -191,6 +190,19 @@ const safeChatHistory = computed(() => {
     timestamp: message.timestamp || new Date().toISOString(),
   }));
 });
+
+// Provide the latest code content to be consumed by CompiledComponent
+provide(
+  "compiledCode",
+  computed(() => {
+    const lastAssistantMessage = chatHistory.value
+      .filter(
+        (msg) => msg.role === "assistant" && typeof msg.content === "object"
+      )
+      .pop();
+    return lastAssistantMessage?.content?.code || "";
+  })
+);
 </script>
 
 <style scoped>

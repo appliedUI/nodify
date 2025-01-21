@@ -12,13 +12,21 @@ export const useAIStore = defineStore("ai", {
     error: null,
     currentMessage: "",
     isTyping: false,
-    agentConfig: {} // Empty object since we'll use snippet-specific configs
+    agentConfig: {}, // Empty object since we'll use snippet-specific configs
   }),
 
   getters: {
     getChatHistory: (state) => state.chatHistory,
     getLastMessage: (state) => state.chatHistory[state.chatHistory.length - 1],
     isChatting: (state) => state.isLoading,
+    getLatestCode: (state) => {
+      const lastAssistantMessage = state.chatHistory
+        .filter(
+          (msg) => msg.role === "assistant" && typeof msg.content === "object"
+        )
+        .pop();
+      return lastAssistantMessage?.content?.code || "";
+    },
   },
 
   actions: {
@@ -65,7 +73,10 @@ export const useAIStore = defineStore("ai", {
     },
 
     async sendCodeReview(snippet) {
-      console.log("[STORE] Starting code review for:", snippet?.label || 'unnamed snippet');
+      console.log(
+        "[STORE] Starting code review for:",
+        snippet?.label || "unnamed snippet"
+      );
       this.isLoading = true;
       this.error = null;
 
@@ -74,7 +85,7 @@ export const useAIStore = defineStore("ai", {
           model: "gpt-4o-mini",
           temperature: 0.7,
           maxTokens: 1000,
-          topP: 1.0
+          topP: 1.0,
         };
 
         console.log("[STORE] Sending code review request with config:", config);
@@ -84,17 +95,17 @@ export const useAIStore = defineStore("ai", {
         // Parse the JSON response string
         let parsedContent;
         try {
-          if (typeof response.response === 'string') {
-            parsedContent = JSON.parse(response.response.replace(/\n/g, ''));
+          if (typeof response.response === "string") {
+            parsedContent = JSON.parse(response.response.replace(/\n/g, ""));
           } else {
             parsedContent = response.response;
           }
         } catch (e) {
-          console.warn('[STORE] Failed to parse JSON response:', e);
+          console.warn("[STORE] Failed to parse JSON response:", e);
           parsedContent = {
             message: response.response,
-            type: 'error',
-            details: ['Failed to parse response format']
+            type: "error",
+            details: ["Failed to parse response format"],
           };
         }
 
