@@ -130,25 +130,10 @@ export const useAIStore = defineStore("ai", {
 
     async handleCompileSubmit(payload) {
       try {
-        //log
+        //updateCompiledCode
         const response = await updateCompiledCode(payload);
-
-        // Update Monaco editor code via codeStore
-        const codeStore = useCodeStore();
-        codeStore.updateNodeCode(response.code);
         //log
-        console.log("[STORE] Monaco editor code updated:", response.code);
-        // Add the interaction to chat history
-        this.chatHistory.push({
-          role: "assistant",
-          content: {
-            message: "Code updated based on form submission",
-            type: "success",
-            details: [],
-            code: response.code,
-          },
-          timestamp: new Date().toISOString(),
-        });
+        console.log("[STORE] Response from updateCompiledCode:", response);
         return response;
       } catch (error) {
         console.error("[STORE] Error handling compile submission:", error);

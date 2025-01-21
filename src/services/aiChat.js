@@ -206,8 +206,17 @@ export const sendAgentMessage = async (agentConfig, userPrompt) => {
  */
 export const updateCompiledCode = async (payload) => {
   try {
+    console.log("[SERVICE] Starting updateCompiledCode with payload:", payload);
+
+    if (!payload?.blockCode?.code) {
+      throw new Error("No block code provided in payload");
+    }
+    if (!payload?.compiledCode) {
+      throw new Error("No compiled code template provided");
+    }
+
     const response = await openai.chat.completions.create({
-      model: payload.blockCode.agentConfig.model || "gpt-4o-mini",
+      model: payload.blockCode.agentConfig?.model || "gpt-4o-mini",
       messages: [
         {
           role: "system",
@@ -225,13 +234,27 @@ Compiled code template: ${payload.compiledCode}
 Please update the original code based on these form values while maintaining the same structure and functionality. The code returned must be in the same language as the 'Original code'. Return your response as JSON with a 'newCode' field containing the updated code.`,
         },
       ],
-      temperature: payload.blockCode.agentConfig.temperature || 0.7,
-      max_tokens: payload.blockCode.agentConfig.maxTokens || 1000,
+      temperature: payload.blockCode.agentConfig?.temperature || 0.7,
+      max_tokens: payload.blockCode.agentConfig?.maxTokens || 1000,
       response_format: { type: "json_object" },
     });
 
-    // Parse the JSON response
+    console.log("[SERVICE] Received OpenAI response:", response);
+
+    if (!response.choices?.[0]?.message?.content) {
+      throw new Error("No content in OpenAI response");
+    }
+
     const jsonResponse = JSON.parse(response.choices[0].message.content);
+
+    if (!jsonResponse.newCode) {
+      throw new Error("No newCode in response");
+    }
+
+    console.log("[SERVICE] Successfully parsed response with new code:", {
+      newCodeLength: jsonResponse.newCode.length,
+      usage: response.usage,
+    });
 
     // Update store with new block code
     const codeStore = useCodeStore();
@@ -242,7 +265,7 @@ Please update the original code based on these form values while maintaining the
       usage: response.usage,
     };
   } catch (error) {
-    console.error("Error updating compiled code:", error);
+    console.error("[SERVICE] Error in updateCompiledCode:", error);
     throw error;
   }
 };
