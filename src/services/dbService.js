@@ -14,17 +14,18 @@ db.version(1).stores({
 export const dbService = {
   // Node operations
   async saveNode(node) {
-    return db.nodes.put({
+    // Ensure we're saving a plain object
+    const plainNode = {
       id: node.id,
       type: node.type,
       label: node.label,
-      code: node.code || "",
-      agentPrompt: node.agentPrompt || "",
+      code: node.code,
+      agentPrompt: node.agentPrompt,
       position: node.position,
-      parentNode: node.parentNode || null,
-      description: node.description || "",
-      agentConfig: node.agentConfig || {},
-    });
+      description: node.description,
+      agentConfig: node.agentConfig,
+    };
+    return db.nodes.put(plainNode);
   },
 
   async getNodes() {

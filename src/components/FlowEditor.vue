@@ -80,7 +80,7 @@
 </template>
 
 <script setup>
-import { ref, markRaw, watch, onMounted, computed } from "vue";
+import { ref, markRaw, watch, onMounted, computed, onUnmounted } from "vue";
 import { VueFlow, useVueFlow, SelectionMode, Position } from "@vue-flow/core";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
@@ -98,7 +98,15 @@ const PADDING = 100;
 
 // Composable setup
 const vueFlow = useVueFlow();
-const { onConnect, addEdges, project, addNodes, updateNode } = vueFlow;
+const {
+  onConnect,
+  addEdges,
+  project,
+  addNodes,
+  updateNode,
+  removeNodes,
+  removeEdges,
+} = vueFlow;
 const elements = ref([]);
 const selectionMode = ref(SelectionMode.Partial);
 const codeStore = useCodeStore();
@@ -153,23 +161,31 @@ const updateCodeFromNodes = () => {
   codeStore.updateNodeBlocks(nodeBlocks);
 };
 
-// Listen for node clicks and update selectedNodeId
+// Helper function to create a plain, serializable node object
+const createSerializableNode = (node) => {
+  return {
+    id: node.id,
+    type: node.type,
+    label: node.label || "",
+    code: node.data?.code || "",
+    agentPrompt: node.data?.agentPrompt || "",
+    position: {
+      x: node.position?.x || 0,
+      y: node.position?.y || 0,
+    },
+    description: node.data?.description || "",
+    agentConfig: node.data?.agentConfig ? { ...node.data.agentConfig } : {},
+  };
+};
+
+// Updated onNodeClick
 const onNodeClick = async (node) => {
-  codeStore.selectNode(node);
   try {
-    // Update the node's position in the database when clicked (in case it was moved programmatically)
-    await dbService.saveNode({
-      id: node.id,
-      type: node.type,
-      label: node.label,
-      code: node.data?.code || "",
-      agentPrompt: node.data?.agentPrompt || "",
-      position: node.position,
-      description: node.data?.description || "",
-      agentConfig: node.data?.agentConfig || {},
-    });
+    codeStore.selectNode(node);
+    const serializableNode = createSerializableNode(node);
+    await dbService.saveNode(serializableNode);
   } catch (error) {
-    console.error("Failed to update node position:", error);
+    console.error("Failed to update node:", error);
   }
 };
 
@@ -354,42 +370,72 @@ onMounted(async () => {
 // Add this computed property
 const showFlow = computed(() => !isLoading.value && !loadError.value);
 
-// Update the onNodeDragStop function
+// Updated onNodeDragStop
 const onNodeDragStop = async (event) => {
   try {
     const { node } = event;
-
     if (!node || !node.id) {
       console.warn("Invalid node in onNodeDragStop:", event);
       return;
     }
 
-    // Create a plain object from the position
-    const position = {
-      x: node.position.x,
-      y: node.position.y,
-    };
+    const serializableNode = createSerializableNode(node);
+    await dbService.saveNode(serializableNode);
 
-    // Update position and label in the database
-    await dbService.saveNode({
-      id: node.id,
-      position: position,
-      label: node.label || "", // Include the label with fallback to empty string
-    });
-
-    console.log("Node position and label updated:", {
-      id: node.id,
-      position: position,
-      label: node.label,
-    });
+    console.log("Node position and label updated:", serializableNode);
   } catch (error) {
     console.error("Failed to update node position and label:", error, {
       nodeId: event?.node?.id,
       position: event?.node?.position,
-      label: event?.node?.label,
     });
   }
 };
+
+// Add keyboard event handler
+const handleKeyDown = (event) => {
+  if (event.key === "Delete" || event.key === "Backspace") {
+    const selectedNodes = elements.value.filter(
+      (el) => el.selected && el.position
+    );
+    if (selectedNodes.length > 0) {
+      // Remove nodes and their connected edges
+      const nodeIds = selectedNodes.map((node) => node.id);
+
+      // Find edges connected to these nodes
+      const edgesToRemove = elements.value
+        .filter((el) => !el.position)
+        .filter(
+          (edge) =>
+            nodeIds.includes(edge.source) || nodeIds.includes(edge.target)
+        )
+        .map((edge) => edge.id);
+
+      // Remove from database
+      Promise.all([
+        ...nodeIds.map((id) => dbService.deleteNode(id)),
+        ...edgesToRemove.map((id) => dbService.deleteEdge(id)),
+      ])
+        .then(() => {
+          // Update local state
+          removeNodes(nodeIds);
+          removeEdges(edgesToRemove);
+          console.log("Deleted nodes and edges:", { nodeIds, edgesToRemove });
+        })
+        .catch((error) => {
+          console.error("Failed to delete nodes/edges:", error);
+        });
+    }
+  }
+};
+
+// Add event listeners
+onMounted(() => {
+  window.addEventListener("keydown", handleKeyDown);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("keydown", handleKeyDown);
+});
 </script>
 
 <style scoped>
