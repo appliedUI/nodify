@@ -197,7 +197,7 @@ nodify/
 ### Getting Help
 
 - Check existing issues
-- Join our Discord community
+- Join our Slack community [here](https://appliedui.slack.com/archives/C08A64C1D4Z)
 - Read the documentation
 - Ask in the discussions section
 
@@ -207,4 +207,4 @@ MIT License - see LICENSE.md
 
 ## Support
 
-For support, please create an issue or join our Discord community.
+For support, please create an issue or join our Slack community [here](https://appliedui.slack.com/archives/C08A64C1D4Z).
