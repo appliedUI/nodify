@@ -2,13 +2,18 @@ import Dexie from "dexie";
 
 // Initialize Dexie database
 const db = new Dexie("FlowEditorDB");
-db.version(1).stores({
-  nodes:
-    "++id, type, label, code, agentPrompt, position, parentNode, description, agentConfig",
-  nodeTypes: "id, type, label, code, description, agentPrompt, agentConfig",
-  chatHistory: "++id, role, content, timestamp",
-  settings: "++id, key, value",
-});
+db.version(2)
+  .stores({
+    nodes:
+      "++id, type, label, code, agentPrompt, position, parentNode, description, agentConfig",
+    nodeTypes: "id, type, label, code, description, agentPrompt, agentConfig",
+    chatHistory: "++id, role, content, timestamp",
+    settings: "++id, key, value",
+    viewport: "++id, x, y, zoom",
+  })
+  .upgrade((trans) => {
+    // Migration logic if needed
+  });
 
 // Export database operations
 export const dbService = {
@@ -62,5 +67,19 @@ export const dbService = {
   async getSetting(key) {
     const setting = await db.settings.get({ key });
     return setting?.value;
+  },
+
+  // Viewport operations
+  async saveViewport(viewport) {
+    return db.viewport.put({
+      id: 1, // We'll use a single record with id=1 for viewport
+      x: viewport.x,
+      y: viewport.y,
+      zoom: viewport.zoom,
+    });
+  },
+
+  async getViewport() {
+    return db.viewport.get(1);
   },
 };

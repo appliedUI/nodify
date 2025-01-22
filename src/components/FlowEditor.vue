@@ -12,7 +12,7 @@
     <div class="flow-content">
       <VueFlow
         v-model="elements"
-        :default-viewport="{ zoom: 1.1 }"
+        :default-viewport="viewport"
         :snap-to-grid="true"
         :snap-grid="[16, 16]"
         @dragover="onDragOver"
@@ -20,6 +20,7 @@
         @nodeDoubleClick="({ node }) => onNodeDoubleClick(node)"
         @nodeDragStop="onNodeDragStop"
         @pane-click="onPaneClick"
+        @viewport-change="onViewportChange"
         class="dark"
         selection-key="Control"
         multi-selection-key="Shift"
@@ -32,6 +33,9 @@
         :zoom-on-double-click="false"
         :pan-on-scroll="false"
         :node-types="nodeTypes"
+        ref="vueFlowInstance"
+        :fit-view-on-init="false"
+        :min-zoom="0.1"
       >
         <template #node-resizableGroup="nodeProps">
           <div :style="nodeProps.style">
@@ -92,7 +96,15 @@
 </template>
 
 <script setup>
-import { ref, markRaw, watch, onMounted, computed, onUnmounted } from "vue";
+import {
+  ref,
+  markRaw,
+  watch,
+  onMounted,
+  computed,
+  onUnmounted,
+  nextTick,
+} from "vue";
 import NodeDetailsBar from "./NodeDetailsBar.vue";
 import { VueFlow, useVueFlow, SelectionMode, Position } from "@vue-flow/core";
 import { Background } from "@vue-flow/background";
@@ -362,12 +374,80 @@ const onDragOver = (event) => {
   event.dataTransfer.dropEffect = "move";
 };
 
-// Load nodes on mount
+// Add debounce function
+const debounce = (fn, delay) => {
+  let timeoutId;
+  return (...args) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn(...args), delay);
+  };
+};
+
+// Update viewport ref and handler
+const viewport = ref({
+  x: 0,
+  y: 0,
+  zoom: 1.1,
+});
+
+// Debounced save function
+const saveViewport = debounce(async (newViewport) => {
+  try {
+    await dbService.saveViewport(newViewport);
+    console.log("Viewport saved:", newViewport);
+  } catch (error) {
+    console.error("Failed to save viewport:", error);
+  }
+}, 500); // 500ms debounce
+
+// Update viewport change handler
+const onViewportChange = (newViewport) => {
+  viewport.value = newViewport;
+  saveViewport(newViewport);
+};
+
+// Add ref for VueFlow instance
+const vueFlowInstance = ref(null);
+
+// Add a flag to track initial viewport set
+const initialViewportSet = ref(false);
+
+// Watch for vueFlowInstance availability
+watch(vueFlowInstance, async (newInstance) => {
+  if (newInstance && !initialViewportSet.value) {
+    await setSavedViewport();
+    initialViewportSet.value = true;
+  }
+});
+
+// Viewport setting function
+const setSavedViewport = async () => {
+  try {
+    const savedViewport = await dbService.getViewport();
+    if (savedViewport) {
+      const newViewport = {
+        x: savedViewport.x || 0,
+        y: savedViewport.y || 0,
+        zoom: savedViewport.zoom || 1.1,
+      };
+
+      console.log("Applying saved viewport:", newViewport);
+
+      // Wait for next tick and set viewport
+      await nextTick();
+      vueFlowInstance.value.setViewport(newViewport, { duration: 0 });
+    }
+  } catch (error) {
+    console.error("Failed to set viewport:", error);
+  }
+};
+
 onMounted(async () => {
   try {
     isLoading.value = true;
-    const nodes = await codeStore.loadNodes();
 
+    // Load nodes first
+    const nodes = await codeStore.loadNodes();
     elements.value = nodes.map((node) => ({
       id: node.id,
       type: node.type,
@@ -384,6 +464,12 @@ onMounted(async () => {
       sourcePosition: "right",
       targetPosition: "left",
     }));
+
+    // If vueFlowInstance is already available, set viewport
+    if (vueFlowInstance.value) {
+      await setSavedViewport();
+      initialViewportSet.value = true;
+    }
   } catch (error) {
     loadError.value = error;
     console.error("Failed to load nodes:", error);
