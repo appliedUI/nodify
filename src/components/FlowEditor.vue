@@ -17,6 +17,7 @@
         :snap-grid="[16, 16]"
         @dragover="onDragOver"
         @nodeClick="({ node }) => onNodeClick(node)"
+        @nodeDragStop="onNodeDragStop"
         class="dark"
         selection-key="Control"
         multi-selection-key="Shift"
@@ -153,9 +154,22 @@ const updateCodeFromNodes = () => {
 };
 
 // Listen for node clicks and update selectedNodeId
-const onNodeClick = (nodeData) => {
-  if (nodeData && nodeData.id) {
-    codeStore.selectNode(nodeData);
+const onNodeClick = async (node) => {
+  codeStore.selectNode(node);
+  try {
+    // Update the node's position in the database when clicked (in case it was moved programmatically)
+    await dbService.saveNode({
+      id: node.id,
+      type: node.type,
+      label: node.label,
+      code: node.data?.code || "",
+      agentPrompt: node.data?.agentPrompt || "",
+      position: node.position,
+      description: node.data?.description || "",
+      agentConfig: node.data?.agentConfig || {},
+    });
+  } catch (error) {
+    console.error("Failed to update node position:", error);
   }
 };
 
@@ -339,6 +353,24 @@ onMounted(async () => {
 
 // Add this computed property
 const showFlow = computed(() => !isLoading.value && !loadError.value);
+
+// Update the onNodeDragStop function
+const onNodeDragStop = async (event, node) => {
+  try {
+    if (!node) {
+      console.warn("No node provided to onNodeDragStop");
+      return;
+    }
+
+    // Only update position information
+    await dbService.saveNode({
+      id: node.id,
+      position: node.position,
+    });
+  } catch (error) {
+    console.error("Failed to update node position:", error);
+  }
+};
 </script>
 
 <style scoped>
