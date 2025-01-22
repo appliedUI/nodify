@@ -355,20 +355,39 @@ onMounted(async () => {
 const showFlow = computed(() => !isLoading.value && !loadError.value);
 
 // Update the onNodeDragStop function
-const onNodeDragStop = async (event, node) => {
+const onNodeDragStop = async (event) => {
   try {
-    if (!node) {
-      console.warn("No node provided to onNodeDragStop");
+    const { node } = event;
+
+    if (!node || !node.id) {
+      console.warn("Invalid node in onNodeDragStop:", event);
       return;
     }
 
-    // Only update position information
+    // Create a plain object from the position
+    const position = {
+      x: node.position.x,
+      y: node.position.y,
+    };
+
+    // Update position and label in the database
     await dbService.saveNode({
       id: node.id,
-      position: node.position,
+      position: position,
+      label: node.label || "", // Include the label with fallback to empty string
+    });
+
+    console.log("Node position and label updated:", {
+      id: node.id,
+      position: position,
+      label: node.label,
     });
   } catch (error) {
-    console.error("Failed to update node position:", error);
+    console.error("Failed to update node position and label:", error, {
+      nodeId: event?.node?.id,
+      position: event?.node?.position,
+      label: event?.node?.label,
+    });
   }
 };
 </script>
