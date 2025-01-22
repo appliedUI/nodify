@@ -17,7 +17,9 @@
         :snap-grid="[16, 16]"
         @dragover="onDragOver"
         @nodeClick="({ node }) => onNodeClick(node)"
+        @nodeDoubleClick="({ node }) => onNodeDoubleClick(node)"
         @nodeDragStop="onNodeDragStop"
+        @pane-click="onPaneClick"
         class="dark"
         selection-key="Control"
         multi-selection-key="Shift"
@@ -74,6 +76,16 @@
             </div>
           </div>
         </div>
+
+        <!-- Bottom Panel -->
+        <div
+          v-show="showPanel"
+          class="bottom-panel"
+          :class="{ 'panel-visible': showPanel }"
+          @click.stop
+        >
+          <NodeDetailsBar :node="selectedNode" />
+        </div>
       </VueFlow>
     </div>
   </div>
@@ -81,6 +93,7 @@
 
 <script setup>
 import { ref, markRaw, watch, onMounted, computed, onUnmounted } from "vue";
+import NodeDetailsBar from "./NodeDetailsBar.vue";
 import { VueFlow, useVueFlow, SelectionMode, Position } from "@vue-flow/core";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
@@ -178,10 +191,22 @@ const createSerializableNode = (node) => {
   };
 };
 
+// Add these new refs
+const showPanel = ref(false);
+const selectedNode = ref(null);
+
 // Updated onNodeClick
 const onNodeClick = async (node) => {
   try {
-    codeStore.selectNode(node);
+    if (selectedNode.value?.id === node.id) {
+      // Clicking the same node again hides the panel
+      showPanel.value = false;
+      selectedNode.value = null;
+      return;
+    }
+
+    selectedNode.value = node;
+    showPanel.value = true;
     const serializableNode = createSerializableNode(node);
     await dbService.saveNode(serializableNode);
   } catch (error) {
@@ -194,8 +219,8 @@ watch(
   () => codeStore.selectedNodeId,
   (newId) => {
     const selectedNode = elements.value.find((el) => el.data?.nodeId === newId);
-    if (selectedNode) {
-      codeStore.selectNode(selectedNode);
+    if (!selectedNode) {
+      showPanel.value = false;
     }
   },
   { immediate: true }
@@ -233,7 +258,7 @@ const addNode = async (nodeType) => {
 
     // Add the new node and select it immediately
     elements.value = [...elements.value, newNode];
-    codeStore.selectNode(newNode);
+    //codeStore.selectNode(newNode);
     updateCodeFromNodes();
   } catch (error) {
     console.error("Failed to save node:", error);
@@ -436,6 +461,22 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener("keydown", handleKeyDown);
 });
+
+// Add this new function
+const onNodeDoubleClick = (node) => {
+  try {
+    codeStore.selectNode(node);
+    console.log("Node double-clicked and selected:", node);
+  } catch (error) {
+    console.error("Failed to select node on double click:", error);
+  }
+};
+
+// Add this new function
+const onPaneClick = () => {
+  showPanel.value = false;
+  selectedNode.value = null;
+};
 </script>
 
 <style scoped>
@@ -480,5 +521,27 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
+}
+
+.bottom-panel {
+  position: absolute;
+  bottom: -45px;
+  left: 0;
+  right: 0;
+  height: 45px;
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  transition: bottom 0.3s ease-in-out;
+  z-index: 10;
+}
+
+.bottom-panel.panel-visible {
+  bottom: 0;
+}
+
+.panel-content {
+  padding: 1rem;
+  color: white;
+  height: 100%;
 }
 </style>
