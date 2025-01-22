@@ -3,7 +3,8 @@ import Dexie from "dexie";
 // Initialize Dexie database
 const db = new Dexie("FlowEditorDB");
 db.version(1).stores({
-  nodes: "++id, type, label, code, agentPrompt, position, parentNode",
+  nodes:
+    "++id, type, label, code, agentPrompt, position, parentNode, description, agentConfig",
   nodeTypes: "id, type, label, code, description, agentPrompt, agentConfig",
   chatHistory: "++id, role, content, timestamp",
   settings: "++id, key, value",
@@ -13,7 +14,17 @@ db.version(1).stores({
 export const dbService = {
   // Node operations
   async saveNode(node) {
-    return db.nodes.put(node);
+    return db.nodes.put({
+      id: node.id,
+      type: node.type,
+      label: node.label,
+      code: node.code || "",
+      agentPrompt: node.agentPrompt || "",
+      position: node.position,
+      parentNode: node.parentNode || null,
+      description: node.description || "",
+      agentConfig: node.agentConfig || {},
+    });
   },
 
   async getNodes() {

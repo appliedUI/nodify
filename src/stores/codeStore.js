@@ -31,8 +31,27 @@ export const useCodeStore = defineStore("code", {
     },
 
     async saveNode(node) {
-      await dbService.saveNode(node);
-      this.nodeBlocks = await dbService.getNodes();
+      try {
+        // Save to Dexie
+        await dbService.saveNode({
+          id: node.id,
+          type: node.type,
+          label: node.label,
+          position: node.position,
+          code: node.data?.code || "",
+          agentPrompt: node.data?.agentPrompt || "",
+          parentNode: node.parentNode || null,
+        });
+
+        // Update local state
+        const existingNode = this.nodeBlocks.find((n) => n.id === node.id);
+        if (!existingNode) {
+          this.nodeBlocks.push(node);
+        }
+      } catch (error) {
+        console.error("Failed to save node:", error);
+        throw error;
+      }
     },
     updateNodeBlocks(blocks) {
       this.nodeBlocks = blocks;

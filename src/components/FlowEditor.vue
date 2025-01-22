@@ -79,7 +79,7 @@
 </template>
 
 <script setup>
-import { ref, markRaw, watch, onMounted } from "vue";
+import { ref, markRaw, watch, onMounted, computed } from "vue";
 import { VueFlow, useVueFlow, SelectionMode, Position } from "@vue-flow/core";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
@@ -87,6 +87,7 @@ import { NodeResizer } from "@vue-flow/node-resizer";
 import { useCodeStore } from "@/stores/codeStore";
 import nodeTypesData from "@/nodeData/nodeTypes.json";
 import "@/assets/styles/flowEditor.css";
+import { dbService } from "@/services/dbService";
 
 // Constants
 const GRID_SIZE = 16;
@@ -127,7 +128,9 @@ const createNode = (type, position, nodeType) => ({
   data: {
     code: nodeType?.code || "",
     nodeId: nodeType?.id,
-    agentPrompt: nodeType?.agentPrompt || "", // Add this line to include new fields
+    agentPrompt: nodeType?.agentPrompt || "",
+    description: nodeType?.description || "",
+    agentConfig: nodeType?.agentConfig || {},
   },
   draggable: true,
   sourcePosition: "right",
@@ -142,7 +145,7 @@ const updateCodeFromNodes = () => {
     .map((node) => ({
       id: node.data.nodeId,
       code: node.data.code.trim() || "",
-      agentPrompt: node.data.agentPrompt || "", // Add this line to include fields
+      agentPrompt: node.data.agentPrompt || "",
       label: node.label,
     }))
     .filter((block) => block.code !== "");
@@ -168,7 +171,7 @@ watch(
   { immediate: true }
 );
 
-const addNode = (nodeType) => {
+const addNode = async (nodeType) => {
   const lastNode = elements.value[elements.value.length - 1];
   const position = {
     x: lastNode ? lastNode.position.x + 180 : 200,
@@ -181,12 +184,31 @@ const addNode = (nodeType) => {
     code: nodeType.code,
     type: nodeType.type,
     agentPrompt: nodeType.agentPrompt,
+    description: nodeType.description,
+    agentConfig: nodeType.agentConfig,
   });
 
-  // Add the new node and select it immediately
-  elements.value = [...elements.value, newNode];
-  codeStore.selectNode(newNode);
-  updateCodeFromNodes();
+  try {
+    // Save the node to the database
+    await dbService.saveNode({
+      id: newNode.id,
+      type: newNode.type,
+      label: newNode.label,
+      code: newNode.data.code,
+      agentPrompt: newNode.data.agentPrompt,
+      position: newNode.position,
+      description: newNode.data.description,
+      agentConfig: newNode.data.agentConfig,
+    });
+
+    // Add the new node and select it immediately
+    elements.value = [...elements.value, newNode];
+    codeStore.selectNode(newNode);
+    updateCodeFromNodes();
+  } catch (error) {
+    console.error("Failed to save node:", error);
+    // Handle error (e.g., show notification to user)
+  }
 };
 
 const nestSelectedNodes = () => {
@@ -291,7 +313,6 @@ onMounted(async () => {
     isLoading.value = true;
     const nodes = await codeStore.loadNodes();
 
-    // Convert saved nodes to flow elements
     elements.value = nodes.map((node) => ({
       id: node.id,
       type: node.type,
@@ -301,6 +322,8 @@ onMounted(async () => {
         code: node.code,
         nodeId: node.id,
         agentPrompt: node.agentPrompt,
+        description: node.description,
+        agentConfig: node.agentConfig,
       },
       draggable: true,
       sourcePosition: "right",
@@ -313,12 +336,15 @@ onMounted(async () => {
     isLoading.value = false;
   }
 });
+
+// Add this computed property
+const showFlow = computed(() => !isLoading.value && !loadError.value);
 </script>
 
 <style scoped>
 /* Empty - all styles moved to flowEditor.css */
 .loading-overlay {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
@@ -332,10 +358,30 @@ onMounted(async () => {
 }
 
 .error-message {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   color: #ff4444;
   padding: 1rem;
   background: #ffebee;
   border-radius: 4px;
   margin: 1rem;
+  z-index: 101;
+}
+
+.flow-editor {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Ensure VueFlow container is visible */
+.vue-flow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 </style>
