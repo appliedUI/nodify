@@ -3,7 +3,7 @@
     v-if="node"
     class="fixed bottom-0 left-0 right-0 bg-gray-900 p-2 border-t border-gray-700"
   >
-    <div class="flex space-x-4 max-w-screen-sm">
+    <div class="flex space-x-2 max-w-screen-sm">
       <!-- Label -->
       <div class="flex items-center space-x-2">
         <input
