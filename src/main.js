@@ -3,12 +3,32 @@ import { createPinia } from "pinia";
 import App from "./App.vue";
 import "./style.css";
 import "@/assets/styles/chat-styles.css";
+import Toast from "vue-toastification";
+import "vue-toastification/dist/index.css";
 
 const app = createApp(App);
 
 // Create and use Pinia
 const pinia = createPinia();
 app.use(pinia);
+
+app.use(Toast, {
+  transition: "Vue-Toastification__fade",
+  maxToasts: 3,
+  newestOnTop: true,
+  toastDefaults: {
+    // Toast container styling
+    containerClassName: "small-toast-container",
+    // Toast styling
+    toastClassName: "small-toast",
+    // Default toast duration
+    timeout: 1000,
+    // Close button visibility
+    closeButton: false,
+    // Icon visibility
+    icon: false,
+  },
+});
 
 // Initialize stores after app creation
 app.mount("#app");

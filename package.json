@@ -20,7 +20,8 @@
     "monaco-editor": "^0.52.2",
     "openai": "^4.79.1",
     "pinia": "^2.3.0",
-    "vue": "^3.0.0"
+    "vue": "^3.0.0",
+    "vue-toastification": "^2.0.0-rc.5"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.6.2",

@@ -11,6 +11,7 @@
           v-model="node.label"
           @keydown.delete.stop
           @keydown.backspace.stop
+          @keydown.enter="saveNode"
           class="w-32 h-6 px-2 text-xs text-white bg-gray-700 border border-gray-600 rounded focus:ring-1 focus:ring-blue-500"
         />
       </div>
@@ -35,6 +36,13 @@
 </template>
 
 <script setup>
+import { ref, watch } from "vue";
+import { dbService } from "@/services/dbService";
+import { useToast } from "vue-toastification";
+
+// Initialize toast
+const toast = useToast();
+
 const props = defineProps({
   node: {
     type: Object,
@@ -42,4 +50,43 @@ const props = defineProps({
     default: null,
   },
 });
+
+const saveNode = async () => {
+  if (!props.node) return;
+
+  try {
+    // Create a clean, serializable object
+    const nodeData = {
+      id: props.node.id,
+      label: props.node.label,
+      type: props.node.type,
+      code: props.node.data?.code || "",
+      agentPrompt: props.node.data?.agentPrompt || "",
+      position: {
+        x: props.node.position?.x || 0,
+        y: props.node.position?.y || 0,
+      },
+      description: props.node.data?.description || "",
+      agentConfig: props.node.data?.agentConfig
+        ? JSON.parse(JSON.stringify(props.node.data.agentConfig))
+        : {},
+    };
+
+    await dbService.saveNode(nodeData);
+    toast.success("Node saved successfully!", {
+      timeout: 2000,
+      position: "bottom-right",
+    });
+  } catch (error) {
+    console.error("Failed to save node:", error);
+    toast.error("Failed to save node", {
+      timeout: 3000,
+      position: "bottom-right",
+    });
+  }
+};
+
+const closePanel = () => {
+  // ... existing code ...
+};
 </script>
