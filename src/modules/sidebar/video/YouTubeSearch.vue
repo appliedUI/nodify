@@ -35,6 +35,7 @@
             class="w-full h-full object-cover"
           />
           <div
+            v-if="!showHistory"
             class="absolute bottom-0 right-0 bg-black bg-opacity-75 px-2 py-1 text-xs text-white"
           >
             {{ formatDuration(video.contentDetails?.duration) }}
@@ -45,6 +46,16 @@
           <p class="text-xs text-gray-500">{{ video.snippet.channelTitle }}</p>
         </div>
       </div>
+    </div>
+
+    <!-- History Controls -->
+    <div
+      v-if="showHistory && searchResults.length"
+      class="flex justify-end mt-2"
+    >
+      <button @click="clearHistory" class="btn btn-sm btn-error">
+        Clear History
+      </button>
     </div>
 
     <!-- Pagination -->
@@ -60,7 +71,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useYoutubeApi } from '@/composables/useYoutubeApi'
 
 const { searchVideos: youtubeSearch, formatDuration } = useYoutubeApi()
@@ -71,6 +82,12 @@ const isLoading = ref(false)
 const currentPage = ref(1)
 const totalResults = ref(0)
 const resultsPerPage = 9
+const showHistory = ref(true)
+
+// Get watched videos from localStorage
+const watchedVideos = ref(
+  JSON.parse(localStorage.getItem('watchedVideos') || '[]')
+)
 
 const hasNextPage = computed(() => {
   return currentPage.value * resultsPerPage < totalResults.value
@@ -80,8 +97,30 @@ const hasPrevPage = computed(() => {
   return currentPage.value > 1
 })
 
+// Add video to history
+const addToHistory = (video) => {
+  const existingIndex = watchedVideos.value.findIndex(
+    (v) => v.id.videoId === video.id.videoId
+  )
+  if (existingIndex !== -1) {
+    watchedVideos.value.splice(existingIndex, 1)
+  }
+  watchedVideos.value.unshift(video)
+  if (watchedVideos.value.length > 50) {
+    watchedVideos.value.pop()
+  }
+  localStorage.setItem('watchedVideos', JSON.stringify(watchedVideos.value))
+}
+
+// Clear history
+const clearHistory = () => {
+  watchedVideos.value = []
+  localStorage.removeItem('watchedVideos')
+}
+
 const searchVideos = async () => {
   if (!searchQuery.value.trim()) return
+  showHistory.value = false
 
   try {
     isLoading.value = true
@@ -110,8 +149,20 @@ const prevPage = () => {
 }
 
 const selectVideo = (video) => {
+  addToHistory(video)
   const videoUrl = `https://www.youtube.com/watch?v=${video.id.videoId}`
   emit('select', videoUrl)
+}
+
+// Show history on mount
+onMounted(() => {
+  if (watchedVideos.value.length > 0) {
+    searchResults.value = watchedVideos.value
+  }
+})
+
+const formatDate = (dateString) => {
+  return new Date(dateString).toLocaleDateString()
 }
 
 defineEmits(['select'])

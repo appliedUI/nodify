@@ -5,8 +5,9 @@
         :currentPage="'API Keys'"
         @breadcrumb-click="handleBreadcrumbClick"
       />
-      <div class="w-full">
+      <div class="w-full space-y-4">
         <OpenAIKeyInput />
+        <YouTubeKeyInput />
       </div>
     </div>
   </MainLayout>
@@ -19,6 +20,7 @@ import MainLayout from '@/layouts/MainLayout.vue'
 import Breadcrumbs from '@/atoms/Breadcrumbs.vue'
 import { toast } from 'vue3-toastify'
 import OpenAIKeyInput from '@/atoms/OpenAIKeyInput.vue' // Ensure this path is correct
+import YouTubeKeyInput from '@/atoms/YouTubeKeyInput.vue'
 
 const redirectedFromWorkspace = ref(false)
 

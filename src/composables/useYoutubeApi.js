@@ -1,13 +1,17 @@
 import { ref } from 'vue'
 
-const API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY
-
 export function useYoutubeApi() {
+  const API_KEY = localStorage.getItem('youtube_api_key')
+
   const searchVideos = async (query, page = 1, maxResults = 9) => {
+    if (!API_KEY) {
+      throw new Error('YouTube API key is required')
+    }
+
     const response = await fetch(
       `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(
         query
-      )}&maxResults=${maxResults}&pageToken=${pageToken}&type=video&key=${API_KEY}`
+      )}&maxResults=${maxResults}&type=video&key=${API_KEY}`
     )
     return await response.json()
   }
@@ -28,8 +32,26 @@ export function useYoutubeApi() {
     ].join('')
   }
 
+  const getWatchHistory = async (maxResults = 9) => {
+    if (!API_KEY) {
+      throw new Error('YouTube API key is required')
+    }
+
+    const response = await fetch(
+      `https://www.googleapis.com/youtube/v3/activities?part=snippet,contentDetails&mine=true&maxResults=${maxResults}&key=${API_KEY}`
+    )
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch watch history')
+    }
+
+    const data = await response.json()
+    return data.items
+  }
+
   return {
     searchVideos,
     formatDuration,
+    getWatchHistory,
   }
 }
