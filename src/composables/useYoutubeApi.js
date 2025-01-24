@@ -3,16 +3,32 @@ import { ref } from 'vue'
 export function useYoutubeApi() {
   const API_KEY = localStorage.getItem('youtube_api_key')
 
-  const searchVideos = async (query, page = 1, maxResults = 9) => {
+  const searchVideos = async (
+    query,
+    page = 1,
+    maxResults = 9,
+    daysBack = 30,
+    regionCode = 'US',
+    pageToken = ''
+  ) => {
     if (!API_KEY) {
       throw new Error('YouTube API key is required')
     }
 
-    const response = await fetch(
-      `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(
-        query
-      )}&maxResults=${maxResults}&type=video&key=${API_KEY}`
-    )
+    // Calculate publishedAfter date
+    const publishedAfter = new Date()
+    publishedAfter.setDate(publishedAfter.getDate() - daysBack)
+    const isoDate = publishedAfter.toISOString()
+
+    let url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(
+      query
+    )}&maxResults=${maxResults}&type=video&key=${API_KEY}&order=date&publishedAfter=${isoDate}&regionCode=${regionCode}`
+
+    if (pageToken) {
+      url += `&pageToken=${pageToken}`
+    }
+
+    const response = await fetch(url)
     return await response.json()
   }
 

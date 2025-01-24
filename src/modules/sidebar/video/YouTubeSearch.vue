@@ -9,7 +9,65 @@
         placeholder="Search YouTube..."
         class="input input-bordered w-full"
       />
+      <!-- Region Selector -->
+      <select
+        v-model="regionCode"
+        class="select select-bordered w-32"
+        @change="searchVideos"
+      >
+        <option value="US">🇺🇸 United States</option>
+        <option value="GB">🇬🇧 United Kingdom</option>
+        <option value="CA">🇨🇦 Canada</option>
+        <option value="AU">🇦🇺 Australia</option>
+        <option value="IN">🇮🇳 India</option>
+        <option value="JP">🇯🇵 Japan</option>
+        <option value="DE">🇩🇪 Germany</option>
+        <option value="FR">🇫🇷 France</option>
+        <option value="BR">🇧🇷 Brazil</option>
+        <option value="MX">🇲🇽 Mexico</option>
+      </select>
       <button @click="searchVideos" class="btn btn-primary">Search</button>
+      <!-- Pagination Controls -->
+      <div class="flex gap-1">
+        <button
+          @click="prevPage"
+          :disabled="!hasPrevPage"
+          class="btn btn-square btn-ghost p-2"
+          title="Previous"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+        </button>
+        <button
+          @click="nextPage"
+          :disabled="!hasNextPage"
+          class="btn btn-square btn-ghost p-2"
+          title="Next"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        </button>
+      </div>
     </div>
 
     <!-- Loading State -->
@@ -57,22 +115,15 @@
         Clear History
       </button>
     </div>
-
-    <!-- Pagination -->
-    <div v-if="searchResults.length" class="flex justify-center gap-2 mt-4">
-      <button @click="prevPage" :disabled="!hasPrevPage" class="btn btn-sm">
-        Previous
-      </button>
-      <button @click="nextPage" :disabled="!hasNextPage" class="btn btn-sm">
-        Next
-      </button>
-    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useYoutubeApi } from '@/composables/useYoutubeApi'
+
+// Define emits at the top of the script
+const emit = defineEmits(['select'])
 
 const { searchVideos: youtubeSearch, formatDuration } = useYoutubeApi()
 
@@ -83,6 +134,9 @@ const currentPage = ref(1)
 const totalResults = ref(0)
 const resultsPerPage = 9
 const showHistory = ref(true)
+const nextPageToken = ref('')
+const prevPageToken = ref('')
+const regionCode = ref('US') // Set your region code here
 
 // Get watched videos from localStorage
 const watchedVideos = ref(
@@ -127,10 +181,16 @@ const searchVideos = async () => {
     const response = await youtubeSearch(
       searchQuery.value,
       currentPage.value,
-      resultsPerPage
+      resultsPerPage,
+      30, // days back
+      regionCode.value,
+      currentPage.value > 1 ? nextPageToken.value : ''
     )
+
     searchResults.value = response.items
     totalResults.value = response.pageInfo.totalResults
+    nextPageToken.value = response.nextPageToken || ''
+    prevPageToken.value = response.prevPageToken || ''
   } catch (error) {
     console.error('Error searching videos:', error)
   } finally {
@@ -139,19 +199,24 @@ const searchVideos = async () => {
 }
 
 const nextPage = () => {
-  currentPage.value++
-  searchVideos()
+  if (nextPageToken.value) {
+    currentPage.value++
+    searchVideos()
+  }
 }
 
 const prevPage = () => {
-  currentPage.value--
-  searchVideos()
+  if (prevPageToken.value) {
+    currentPage.value--
+    searchVideos()
+  }
 }
 
 const selectVideo = (video) => {
   addToHistory(video)
   const videoUrl = `https://www.youtube.com/watch?v=${video.id.videoId}`
   emit('select', videoUrl)
+  console.log('Video selected:', videoUrl)
 }
 
 // Show history on mount
@@ -160,10 +225,4 @@ onMounted(() => {
     searchResults.value = watchedVideos.value
   }
 })
-
-const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString()
-}
-
-defineEmits(['select'])
 </script>
