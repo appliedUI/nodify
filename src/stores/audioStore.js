@@ -115,6 +115,10 @@ export const useAudioStore = defineStore('audio', {
       this.isAudioRecording = isRecording
     },
 
+    setAudioProcessing(isProcessing) {
+      this.isAudioProcessing = isProcessing
+    },
+
     // Update sendAudioToWhisper to handle graph generation
     async sendAudioToWhisper(arrayBuffer) {
       this.error = ''
@@ -126,7 +130,7 @@ export const useAudioStore = defineStore('audio', {
         type: 'info',
         position: 'top-right',
         autoClose: false,
-        isLoading: true
+        isLoading: true,
       })
 
       try {
@@ -152,7 +156,7 @@ export const useAudioStore = defineStore('audio', {
           type: 'success',
           isLoading: false,
           autoClose: 2000,
-          render: 'Processed successfully!'
+          render: 'Processed successfully!',
         })
       } catch (err) {
         console.error('❌ Error processing audio:', err)
@@ -161,7 +165,7 @@ export const useAudioStore = defineStore('audio', {
           type: 'error',
           isLoading: false,
           autoClose: 5000,
-          render: this.error
+          render: this.error,
         })
       } finally {
         this.isAudioProcessing = false

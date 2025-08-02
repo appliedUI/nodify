@@ -8,13 +8,17 @@
     leave-to-class="translate-y-full opacity-0"
   >
     <div
-      v-if="showPanel && transcript && transcript.trim()"
+      v-if="showPanel"
       class="bg-primary text-white fixed bottom-0 w-[230px] z-50 left-0 tranPanel"
     >
       <div class="max-w-4xl mx-auto">
         <div class="bg-primary p-2 rounded-lg shadow-lg mb-2">
           <div class="flex justify-between items-center mt-3 mb-4">
-            <span class="text-xs text-gray-400"> </span>
+            <span class="text-xs text-gray-400">
+              <span v-if="!transcript || !transcript.trim()"
+                >Processing...</span
+              >
+            </span>
 
             <div class="flex space-x-3">
               <span
@@ -75,9 +79,13 @@
             class="bg-base-100 p-3 rounded-lg h-[130px] overflow-y-scroll scrollbar-hide"
           >
             <div
+              v-if="transcript && transcript.trim()"
               class="markdown-body dark-theme text-sm"
               v-html="md.render(transcript)"
             ></div>
+            <div v-else class="text-sm text-gray-400">
+              Recording completed. Processing transcript...
+            </div>
           </div>
         </div>
       </div>
@@ -131,6 +139,7 @@ const subjectsStore = useSubjectsStore()
 const videoStore = useVideoStore()
 const pdfStore = usePDFStore()
 const transcript = ref('')
+const lastLoadedSubjectId = ref(null)
 const showCheckMark = ref(false)
 const isProcessing = ref(false)
 const hasTranscript = ref(false)
@@ -234,15 +243,20 @@ watch(
 )
 
 onMounted(async () => {
-  // Explicitly hide panel on mount
   showPanel.value = false
-
-  // Only proceed if we have a subject ID
+  // Only load transcript if subject is selected
   const subjectId = subjectsStore.selectedSubjectId
   if (!subjectId) return
+  await loadTranscriptForSubject(subjectId)
+  await testVideoUrl()
+})
 
-  // Check for markdown transcript
+async function loadTranscriptForSubject(subjectId, force = false) {
+  if (!subjectId) return
+  if (lastLoadedSubjectId.value === subjectId && !force) return
+  lastLoadedSubjectId.value = subjectId
   try {
+    // Try localStorage first
     const storedMarkdown = getMarkdownFromStorage(subjectId)
     if (storedMarkdown) {
       generatedMarkdown.value = storedMarkdown
@@ -256,15 +270,13 @@ onMounted(async () => {
   } catch (error) {
     console.error('Error fetching markdown transcript:', error)
   }
-
-  // Add PDF transcript check
+  // Try PDF transcript
   try {
     const pdfs = await db.getPDFsBySubject(subjectId)
     if (pdfs.length > 0) {
-      const latestPDF = pdfs[pdfs.length - 1] // Get most recent PDF
+      const latestPDF = pdfs[pdfs.length - 1]
       if (latestPDF.markdownContent) {
         transcript.value = cleanTranscript(latestPDF.markdownContent)
-        //then start the graph generation using the videoStore
         hasTranscript.value = true
         return
       }
@@ -272,9 +284,33 @@ onMounted(async () => {
   } catch (error) {
     console.error('Error loading PDF transcript:', error)
   }
-
-  await testVideoUrl()
-})
+  // Try audio transcript
+  try {
+    const audioTranscript = await audioStore.getTranscriptsBySubjectId(subjectId)
+    if (audioTranscript) {
+      transcript.value = cleanTranscript(audioTranscript)
+      hasTranscript.value = true
+      return
+    }
+  } catch (error) {
+    console.error('Error loading audio transcript:', error)
+  }
+  // Try DB subject transcript
+  try {
+    const subject = await db.subjects.get(subjectId)
+    if (subject?.graph?.transcript?.source) {
+      transcript.value = cleanTranscript(subject.graph.transcript.text)
+      hasTranscript.value = true
+    } else {
+      transcript.value = ''
+      hasTranscript.value = false
+    }
+  } catch (error) {
+    console.error('Error fetching subject from db:', error)
+    transcript.value = ''
+    hasTranscript.value = false
+  }
+}
 
 // Add this helper function to clean up the transcript
 const cleanTranscript = (text) => {
@@ -286,48 +322,14 @@ watchEffect(async () => {
   const subjectId = subjectsStore.selectedSubjectId
   if (subjectId) {
     showPanel.value = true
-
-    // Check for PDF transcript first
-    try {
-      const pdfs = await db.getPDFsBySubject(subjectId)
-      if (pdfs.length > 0) {
-        const latestPDF = pdfs[pdfs.length - 1]
-        if (latestPDF.markdownContent) {
-          transcript.value = cleanTranscript(latestPDF.markdownContent)
-          hasTranscript.value = true
-          return
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching PDF transcript:', error)
-    }
-
-    const audioTranscript = await audioStore.getTranscriptsBySubjectId(
-      subjectId
-    )
-    if (audioTranscript) {
-      transcript.value = cleanTranscript(audioTranscript)
-      hasTranscript.value = true
-    } else {
-      try {
-        const subject = await db.subjects.get(subjectId)
-        if (subject?.graph?.transcript?.source) {
-          transcript.value = cleanTranscript(subject.graph.transcript.text)
-          hasTranscript.value = true
-        } else {
-          transcript.value = ''
-          hasTranscript.value = false
-        }
-      } catch (error) {
-        console.error('Error fetching subject from db:', error)
-        transcript.value = ''
-        hasTranscript.value = false
-      }
+    if (lastLoadedSubjectId.value !== subjectId) {
+      await loadTranscriptForSubject(subjectId)
     }
   } else {
     showPanel.value = false
     transcript.value = ''
     hasTranscript.value = false
+    lastLoadedSubjectId.value = null
   }
 })
 

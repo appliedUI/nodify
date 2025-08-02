@@ -177,6 +177,9 @@ const stopRecording = () => {
     mediaRecorder.value.stop()
     const tracks = mediaRecorder.value.stream.getTracks()
     tracks.forEach((track) => track.stop())
+
+    // Set processing state immediately for UI feedback
+    audioStore.setAudioProcessing(true)
   }
   isRecording.value = false
 }
