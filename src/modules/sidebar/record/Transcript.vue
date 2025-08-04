@@ -15,9 +15,17 @@
         <div class="bg-primary p-2 rounded-lg shadow-lg mb-2">
           <div class="flex justify-between items-center mt-3 mb-4">
             <span class="text-xs text-gray-400">
-              <span v-if="!transcript || !transcript.trim()"
-                >Processing...</span
+              <span v-if="videoStore.transcriptLoading">
+                Fetching YouTube transcript...
+              </span>
+              <span v-else-if="videoStore.transcriptError">
+                Transcript Error
+              </span>
+              <span
+                v-else-if="!displayedTranscript || !displayedTranscript.trim()"
               >
+                Processing...
+              </span>
             </span>
 
             <div class="flex space-x-3">
@@ -26,10 +34,26 @@
                 v-if="
                   isRegenerating ||
                   isGenerating ||
-                  audioStore.isMarkdownProcessing
+                  audioStore.isMarkdownProcessing ||
+                  videoStore.transcriptLoading
                 "
-                >Generating...
+              >
+                <span v-if="videoStore.transcriptLoading">
+                  Fetching transcript...
+                </span>
+                <span v-else> Generating... </span>
               </span>
+              <!-- Retry button for transcript errors -->
+              <div
+                v-if="videoStore.transcriptError"
+                class="tooltip"
+                data-tip="Retry fetching transcript"
+              >
+                <ArrowPathIcon
+                  class="w-5 h-5 cursor-pointer text-red-400 hover:text-red-300"
+                  @click="retryTranscriptFetch"
+                />
+              </div>
               <div
                 v-if="hasVideo"
                 class="tooltip"
@@ -70,7 +94,7 @@
                       ? 'w-5 h-5 text-green-500'
                       : 'w-5 h-5 text-white'
                   "
-                  @click="copyToClipboard(transcript)"
+                  @click="copyToClipboard(displayedTranscript)"
                 />
               </div>
             </div>
@@ -78,11 +102,33 @@
           <div
             class="bg-base-100 p-3 rounded-lg h-[130px] overflow-y-scroll scrollbar-hide"
           >
+            <!-- Error state -->
             <div
-              v-if="transcript && transcript.trim()"
+              v-if="videoStore.transcriptError"
+              class="text-sm text-red-400 space-y-2"
+            >
+              <div>{{ videoStore.transcriptError }}</div>
+              <button
+                @click="retryTranscriptFetch"
+                class="text-xs bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded"
+              >
+                Retry
+              </button>
+            </div>
+            <!-- Loading state -->
+            <div
+              v-else-if="videoStore.transcriptLoading"
+              class="text-sm text-blue-400"
+            >
+              <div class="animate-pulse">Fetching YouTube transcript...</div>
+            </div>
+            <!-- Success state -->
+            <div
+              v-else-if="displayedTranscript && displayedTranscript.trim()"
               class="markdown-body dark-theme text-sm"
-              v-html="md.render(transcript)"
+              v-html="md.render(displayedTranscript)"
             ></div>
+            <!-- Default processing state -->
             <div v-else class="text-sm text-gray-400">
               Recording completed. Processing transcript...
             </div>
@@ -95,6 +141,7 @@
     v-if="subjectsStore.currentSubject?.youtubeUrl"
     :video-id="youtubeVideoId"
     :show="showVideo"
+    :transcript="videoStore.youtubeTranscript"
     @close="showVideo = false"
   />
   <!-- Markdown Modal -->
@@ -158,6 +205,16 @@ const youtubeVideoId = computed(() => {
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/
   const match = url.match(regExp)
   return match && match[2].length === 11 ? match[2] : null
+})
+
+// Computed property to determine which transcript to display
+const displayedTranscript = computed(() => {
+  // If there's a YouTube transcript, use it (replaces whisper transcript)
+  if (videoStore.youtubeTranscript) {
+    return videoStore.youtubeTranscript
+  }
+  // Otherwise, fall back to the whisper transcript
+  return transcript.value
 })
 
 const md = new MarkdownIt({
@@ -231,12 +288,22 @@ const hasVideo = computed(() => {
 })
 
 // Add this watcher
+// Fix: Use a store mutation/action to update youtubeUrl
 watch(
   () => videoStore.videoUrl,
   (newUrl) => {
-    if (newUrl) {
-      // Update the subject with the new video URL
-      subjectsStore.currentSubject.youtubeUrl = newUrl
+    if (newUrl && subjectsStore.currentSubject) {
+      // Replace with a proper store mutation/action
+      if (typeof subjectsStore.setYoutubeUrl === 'function') {
+        subjectsStore.setYoutubeUrl(subjectsStore.currentSubject.id, newUrl)
+      } else {
+        // fallback: update via subjectsStore.updateSubject if available
+        if (typeof subjectsStore.updateSubject === 'function') {
+          subjectsStore.updateSubject(subjectsStore.currentSubject.id, {
+            youtubeUrl: newUrl,
+          })
+        }
+      }
     }
   },
   { immediate: true }
@@ -286,7 +353,9 @@ async function loadTranscriptForSubject(subjectId, force = false) {
   }
   // Try audio transcript
   try {
-    const audioTranscript = await audioStore.getTranscriptsBySubjectId(subjectId)
+    const audioTranscript = await audioStore.getTranscriptsBySubjectId(
+      subjectId
+    )
     if (audioTranscript) {
       transcript.value = cleanTranscript(audioTranscript)
       hasTranscript.value = true
@@ -311,6 +380,17 @@ async function loadTranscriptForSubject(subjectId, force = false) {
     hasTranscript.value = false
   }
 }
+
+// Watch for changes in videoStore.youtubeTranscript and update transcript accordingly
+watch(
+  () => videoStore.youtubeTranscript,
+  (newTranscript) => {
+    if (newTranscript && newTranscript !== transcript.value) {
+      transcript.value = cleanTranscript(newTranscript)
+      hasTranscript.value = true
+    }
+  }
+)
 
 // Add this helper function to clean up the transcript
 const cleanTranscript = (text) => {
@@ -364,6 +444,17 @@ watch(
       console.error('Error generating graph:', error)
     } finally {
       isProcessing.value = false
+    }
+  }
+)
+
+// Watch for changes in videoStore.youtubeTranscript and update the displayed transcript
+watch(
+  () => videoStore.youtubeTranscript,
+  (newTranscript) => {
+    if (newTranscript) {
+      transcript.value = cleanTranscript(newTranscript)
+      hasTranscript.value = true
     }
   }
 )
@@ -438,7 +529,10 @@ async function generateMarkdown() {
     }
 
     isGenerating.value = true
-    const markdown = await subjectsStore.processTranscript(transcript.value)
+    // Use displayedTranscript instead of transcript for markdown generation
+    const markdown = await subjectsStore.processTranscript(
+      displayedTranscript.value
+    )
 
     // Save to localStorage
     saveMarkdownToStorage(subjectId, markdown)
@@ -488,8 +582,8 @@ async function testVideoUrl() {
     console.log('Current video URL for subject:', { subjectId, videoUrl })
 
     if (!videoUrl) {
-      // For testing, set a sample YouTube URL
-      const testUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+      // For testing, use a video known to have transcripts (TED Talk)
+      const testUrl = 'https://www.youtube.com/watch?v=ZMrv68qsDxo'
       await videoStore.setVideoUrl(subjectId, testUrl)
       console.log('Set test video URL:', testUrl)
     }
@@ -504,7 +598,10 @@ async function handleRegenerate() {
 
   try {
     isRegenerating.value = true
-    const newMarkdown = await subjectsStore.processTranscript(transcript.value)
+    // Use displayedTranscript instead of transcript for regeneration
+    const newMarkdown = await subjectsStore.processTranscript(
+      displayedTranscript.value
+    )
 
     // Update local state
     generatedMarkdown.value = newMarkdown
@@ -519,6 +616,45 @@ async function handleRegenerate() {
     toast.error('Failed to regenerate markdown')
   } finally {
     isRegenerating.value = false
+  }
+}
+
+// Add retry function for transcript fetching
+async function retryTranscriptFetch() {
+  const subjectId = subjectsStore.selectedSubjectId
+  if (!subjectId) return
+
+  try {
+    const videoUrl = await videoStore.getVideoUrl(subjectId)
+    if (!videoUrl) {
+      toast.error('No video URL found for this subject')
+      return
+    }
+
+    let videoId = null
+    if (videoUrl.includes('youtu.be/')) {
+      videoId = videoUrl.split('youtu.be/')[1]?.split('?')[0]
+    } else if (videoUrl.includes('youtube.com/watch')) {
+      videoId = videoUrl.split('v=')[1]?.split('&')[0]
+    }
+
+    if (!videoId) {
+      toast.error('Invalid video URL format')
+      return
+    }
+
+    toast('Retrying transcript fetch...', {
+      theme: 'auto',
+      type: 'info',
+      position: 'top-center',
+      autoClose: 2000,
+    })
+
+    await videoStore.retryTranscriptFetch(videoId, subjectId)
+    toast.success('Transcript fetched successfully!')
+  } catch (error) {
+    console.error('Error retrying transcript fetch:', error)
+    toast.error(`Failed to fetch transcript: ${error.message}`)
   }
 }
 

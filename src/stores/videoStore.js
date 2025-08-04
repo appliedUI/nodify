@@ -1,5 +1,4 @@
 import { defineStore } from 'pinia'
-import { YoutubeTranscript } from 'youtube-transcript'
 import { useSubjectsStore } from './subjectsStore'
 import { db } from '@/db/db'
 import { useGraphForceStore } from '@/stores/graphForceStore'
@@ -15,6 +14,10 @@ export const useVideoStore = defineStore('video', {
     videoUrl: null,
     showVideo: false,
     isVideoSubject: false,
+    transcriptLoading: false,
+    transcriptError: null,
+    retryCount: 0,
+    maxRetries: 3,
   }),
   actions: {
     toggleVideo(show) {
@@ -92,17 +95,32 @@ export const useVideoStore = defineStore('video', {
     },
 
     async fetchTranscript(videoId, subjectId) {
+      console.log('🎬 Starting transcript fetch for video:', videoId)
+
       try {
         if (!videoId) throw new Error('Video ID is required')
 
+        // Reset error state and set loading
+        this.transcriptError = null
+        this.transcriptLoading = true
         this.updateProcessingProgress({ isComplete: false })
-
         this.videoId = videoId
 
+        console.log('📋 Fetching transcript from main process...')
         const fullTranscript = await window.electronAPI.fetchYouTubeTranscript(
           videoId
         )
+
+        if (!fullTranscript || fullTranscript.trim().length === 0) {
+          throw new Error('Empty transcript received')
+        }
+
+        console.log(
+          '✅ Transcript fetched successfully, length:',
+          fullTranscript.length
+        )
         this.youtubeTranscript = fullTranscript
+        this.retryCount = 0 // Reset retry count on success
 
         if (subjectId) {
           const subjectsStore = useSubjectsStore()
@@ -124,12 +142,42 @@ export const useVideoStore = defineStore('video', {
 
         return fullTranscript
       } catch (error) {
-        console.error('Error fetching YouTube transcript:', error)
+        console.error('❌ Error fetching YouTube transcript:', error)
+        this.transcriptError = error.message
         this.error = error.message
+
+        // Don't throw error immediately, allow for retry
+        if (this.retryCount < this.maxRetries) {
+          console.log(
+            `🔄 Retry attempt ${this.retryCount + 1}/${this.maxRetries}`
+          )
+          this.retryCount++
+          // Wait a bit before retry
+          await new Promise((resolve) => setTimeout(resolve, 2000))
+          return this.fetchTranscript(videoId, subjectId)
+        }
+
         throw error
       } finally {
+        this.transcriptLoading = false
         this.updateProcessingProgress({ isComplete: true })
       }
+    },
+
+    // Add retry functionality
+    async retryTranscriptFetch(videoId, subjectId) {
+      console.log('🔄 Retrying transcript fetch...')
+      this.retryCount = 0 // Reset retry count
+      this.transcriptError = null
+      return this.fetchTranscript(videoId, subjectId)
+    },
+
+    // Clear transcript and error states
+    clearTranscriptState() {
+      this.youtubeTranscript = null
+      this.transcriptError = null
+      this.transcriptLoading = false
+      this.retryCount = 0
     },
 
     updateProcessingProgress(progress) {

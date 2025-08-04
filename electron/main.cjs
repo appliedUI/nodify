@@ -444,15 +444,267 @@ const setupIpcHandlers = () => {
     }
   )
   ipcMain.handle('fetch-youtube-transcript', async (event, videoId) => {
+    console.log('🎬 Fetching YouTube transcript for video ID:', videoId)
+
     try {
-      const { YoutubeTranscript } = require('youtube-transcript')
-      const transcriptArray = await YoutubeTranscript.fetchTranscript(videoId)
-      return transcriptArray.map((item) => item.text).join(' ')
+      // Validate video ID
+      if (!videoId || typeof videoId !== 'string') {
+        throw new Error('Invalid video ID provided')
+      }
+
+      // Validate video ID format (YouTube video IDs are 11 characters)
+      if (videoId.length !== 11) {
+        throw new Error('Invalid YouTube video ID format')
+      }
+
+      console.log('📋 Attempting to fetch transcript from YouTube...')
+      console.log('🔧 DEBUG: Using updated language priority order!')
+      console.log('🔧 DEBUG: Video ID being processed:', videoId)
+
+      // Method 1: Try youtube-captions-scraper (more recent)
+      try {
+        console.log('🔄 Trying youtube-captions-scraper...')
+        const { getSubtitles } = require('youtube-captions-scraper')
+
+        // Try different language codes - prioritize basic 'en' over regional variants
+        const langCodes = ['en', 'auto', '', 'en-US', 'en-GB']
+        console.log('🔧 DEBUG: Will try langCodes:', langCodes)
+        for (const lang of langCodes) {
+          try {
+            console.log(
+              `🔧 DEBUG: Trying youtube-captions-scraper with lang: "${lang}"`
+            )
+            const captions = await getSubtitles({
+              videoID: videoId,
+              lang: lang,
+            })
+            console.log(
+              `🔧 DEBUG: getSubtitles returned for "${lang}":`,
+              captions ? captions.length : 'null'
+            )
+
+            if (captions) {
+              if (captions.length > 0) {
+                const fullTranscript = captions
+                  .map((caption) => caption.text)
+                  .join(' ')
+                console.log(
+                  `✅ Successfully fetched transcript via youtube-captions-scraper (${lang}), length:`,
+                  fullTranscript.length
+                )
+                return fullTranscript
+              } else {
+                console.log(
+                  `⚠️ youtube-captions-scraper found "${lang}" but transcript is empty (0 captions)`
+                )
+                // Continue to next language code instead of returning empty
+              }
+            }
+          } catch (langError) {
+            console.log(
+              `⚠️ youtube-captions-scraper failed for ${lang}:`,
+              langError.message
+            )
+            continue
+          }
+        }
+      } catch (scraperError) {
+        console.log('⚠️ youtube-captions-scraper failed:', scraperError.message)
+      }
+
+      // Method 2: Try original youtube-transcript package
+      try {
+        console.log('🔄 Trying youtube-transcript...')
+        const { YoutubeTranscript } = require('youtube-transcript')
+
+        // Try different language codes and fallback options - prioritize basic 'en'
+        const langOptions = [
+          { lang: 'en' },
+          {}, // Let it auto-detect
+          { lang: 'en-US' },
+          { lang: 'en-GB' },
+        ]
+        console.log('🔧 DEBUG: Will try langOptions:', langOptions)
+
+        for (const options of langOptions) {
+          try {
+            console.log(
+              `🔧 DEBUG: Trying youtube-transcript with options:`,
+              JSON.stringify(options)
+            )
+            const transcriptArray = await YoutubeTranscript.fetchTranscript(
+              videoId,
+              options
+            )
+            console.log(
+              `🔧 DEBUG: YoutubeTranscript returned for ${JSON.stringify(
+                options
+              )}:`,
+              transcriptArray ? transcriptArray.length : 'null'
+            )
+
+            if (transcriptArray) {
+              if (transcriptArray.length > 0) {
+                const fullTranscript = transcriptArray
+                  .map((item) => item.text)
+                  .join(' ')
+                console.log(
+                  `✅ Successfully fetched transcript via youtube-transcript (${JSON.stringify(
+                    options
+                  )}), length:`,
+                  fullTranscript.length
+                )
+                return fullTranscript
+              } else {
+                console.log(
+                  `⚠️ youtube-transcript found ${JSON.stringify(
+                    options
+                  )} but transcript is empty (0 items)`
+                )
+                // Continue to next language option instead of returning empty
+              }
+            }
+          } catch (langError) {
+            console.log(
+              `⚠️ youtube-transcript failed for ${JSON.stringify(options)}:`,
+              langError.message
+            )
+            continue
+          }
+        }
+      } catch (originalError) {
+        console.log('⚠️ youtube-transcript failed:', originalError.message)
+      }
+
+      // Method 3: Try Puppeteer scraping as last resort
+      try {
+        console.log('🔄 Trying Puppeteer scraping...')
+        const fullTranscript = await scrapeTranscriptWithPuppeteer(videoId)
+        if (fullTranscript && fullTranscript.trim().length > 0) {
+          console.log(
+            '✅ Successfully fetched transcript via Puppeteer, length:',
+            fullTranscript.length
+          )
+          return fullTranscript
+        }
+      } catch (puppeteerError) {
+        console.log('⚠️ Puppeteer scraping failed:', puppeteerError.message)
+      }
+
+      // All methods failed
+      throw new Error(
+        'No transcript content found for this video. The video may have empty transcript tracks or transcript may not be available.'
+      )
     } catch (error) {
-      console.error('Error fetching YouTube transcript:', error)
-      throw error
+      console.error('❌ Error fetching YouTube transcript:', {
+        videoId,
+        error: error.message,
+        stack: error.stack,
+      })
+
+      // Provide more specific error messages
+      let userMessage = 'Failed to fetch YouTube transcript'
+      if (error.message.includes('No transcript')) {
+        userMessage = 'No transcript available for this video'
+      } else if (error.message.includes('Video unavailable')) {
+        userMessage = 'Video is not available or private'
+      } else if (error.message.includes('Invalid')) {
+        userMessage = 'Invalid video URL or ID'
+      } else if (
+        error.message.includes('network') ||
+        error.message.includes('fetch')
+      ) {
+        userMessage = 'Network error - please check your internet connection'
+      }
+
+      throw new Error(userMessage)
     }
   })
+
+  // Helper function for Puppeteer scraping
+  async function scrapeTranscriptWithPuppeteer(videoId) {
+    let browser = null
+    try {
+      browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      })
+      const page = await browser.newPage()
+
+      // Navigate to video page
+      await page.goto(`https://www.youtube.com/watch?v=${videoId}`, {
+        waitUntil: 'networkidle0',
+        timeout: 30000,
+      })
+
+      // Wait for video to load
+      await page.waitForSelector('#movie_player', { timeout: 10000 })
+
+      // Try to find and click transcript button
+      const transcriptButtons = [
+        '[aria-label*="transcript" i]',
+        '[aria-label*="captions" i]',
+        'button[aria-label*="Show transcript"]',
+        '.ytp-menuitem[aria-label*="transcript" i]',
+      ]
+
+      let transcriptFound = false
+      for (const selector of transcriptButtons) {
+        try {
+          await page.click(selector)
+          transcriptFound = true
+          break
+        } catch (e) {
+          // Continue to next selector
+        }
+      }
+
+      if (!transcriptFound) {
+        throw new Error('Could not find transcript button')
+      }
+
+      // Wait for transcript panel to load
+      await page.waitForSelector(
+        '.ytd-transcript-segment-renderer, .transcript-item, [data-testid="transcript-segment"]',
+        { timeout: 5000 }
+      )
+
+      // Extract transcript text
+      const transcriptSelectors = [
+        '.ytd-transcript-segment-renderer',
+        '.transcript-item',
+        '[data-testid="transcript-segment"]',
+      ]
+
+      let transcriptText = ''
+      for (const selector of transcriptSelectors) {
+        try {
+          const elements = await page.$$(selector)
+          if (elements.length > 0) {
+            const texts = await Promise.all(
+              elements.map((el) =>
+                page.evaluate((element) => element.textContent, el)
+              )
+            )
+            transcriptText = texts.join(' ').trim()
+            break
+          }
+        } catch (e) {
+          // Continue to next selector
+        }
+      }
+
+      if (!transcriptText) {
+        throw new Error('Could not extract transcript text')
+      }
+
+      return transcriptText
+    } finally {
+      if (browser) {
+        await browser.close()
+      }
+    }
+  }
 
   // ----------------------
   // Subject & Transcript Management
@@ -738,8 +990,8 @@ const setupIpcHandlers = () => {
         defaultPath: `workspace-${Date.now()}.workspace.json`,
         filters: [
           { name: 'Workspace Files', extensions: ['workspace.json'] },
-          { name: 'All Files', extensions: ['*'] }
-        ]
+          { name: 'All Files', extensions: ['*'] },
+        ],
       })
 
       if (!filePath) return { success: false }
@@ -765,7 +1017,7 @@ const setupIpcHandlers = () => {
 
       const fileContent = await fs.readFile(filePaths[0], 'utf8')
       const jsonData = JSON.parse(fileContent)
-      
+
       // Send the data to the renderer for processing
       return { success: true, data: jsonData }
     } catch (error) {
