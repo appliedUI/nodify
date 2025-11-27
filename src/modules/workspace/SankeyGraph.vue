@@ -327,18 +327,18 @@ const linkPanelNodes = computed(() => {
   if (!selectedLink.value) return []
 
   const panels = []
-  if (selectedLink.value.sourceNode) {
-    panels.push({
-      role: 'Source Concept',
-      key: 'source',
-      node: selectedLink.value.sourceNode,
-    })
-  }
   if (selectedLink.value.targetNode) {
     panels.push({
       role: 'Target Concept',
       key: 'target',
       node: selectedLink.value.targetNode,
+    })
+  }
+  if (selectedLink.value.sourceNode) {
+    panels.push({
+      role: 'Source Concept',
+      key: 'source',
+      node: selectedLink.value.sourceNode,
     })
   }
   return panels
