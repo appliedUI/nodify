@@ -19,6 +19,7 @@
 import { ref, computed, onMounted } from 'vue'
 import ForceGraph from '../modules/workspace/ForceGraph.vue'
 import OrgChart from '../modules/workspace/OrgChart.vue'
+import SankeyGraph from '../modules/workspace/SankeyGraph.vue'
 import MainLayout from '@/layouts/MainLayout.vue'
 import Sidebar from '@/modules/sidebar/Sidebar.vue'
 import NoSubject from '@/assets/img/noSubject.svg'
@@ -30,7 +31,14 @@ const subjectsStore = useSubjectsStore()
 const graphType = ref('forceGraph')
 
 const selectedGraph = computed(() => {
-  return graphType.value === 'forceGraph' ? ForceGraph : OrgChart
+  switch (graphType.value) {
+    case 'sankey':
+      return SankeyGraph
+    case 'orgChart':
+      return OrgChart
+    default:
+      return ForceGraph
+  }
 })
 
 const updateGraphType = (newType) => {

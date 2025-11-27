@@ -111,6 +111,34 @@
           </svg>
         </button>
 
+        <!-- Sankey Layout -->
+        <button
+          class="btn btn-circle btn-sm bg-base-200/70 backdrop-blur tooltip tooltip-top mb-4 p-1"
+          @click="updateGraphType('sankey')"
+          :class="{ 'btn-active': graphType === 'sankey' }"
+          data-tip="Sankey Layout"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-5 h-5"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M3 7c4.5 0 4.5 10 9 10s4.5-10 9-10"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M3 17c4.5 0 4.5-10 9-10s4.5 10 9 10"
+            />
+          </svg>
+        </button>
+
         <!-- Org Chart Layout -->
         <!-- <button
           class="btn btn-circle btn-sm bg-base-200/70 backdrop-blur tooltip tooltip-top mb-4 p-1"
