@@ -120,6 +120,132 @@
       <div class="mindmap-container">
         <div ref="chartRef" class="sankey-chart"></div>
       </div>
+
+      <!-- Link Detail Overlay Panel -->
+      <Transition name="slide-fade">
+        <div
+          v-if="showLinkPanel && linkPanelNodes.length"
+          class="link-detail-panel"
+          @click.self="closeLinkPanel"
+        >
+          <div class="panel-content">
+            <div class="panel-header">
+              <div>
+                <p class="panel-eyebrow">Connector Insight</p>
+                <h3 class="text-lg font-semibold text-white">
+                  Connection Details
+                </h3>
+              </div>
+              <button
+                @click="closeLinkPanel"
+                class="btn btn-ghost btn-sm btn-circle"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="2"
+                  stroke="currentColor"
+                  class="w-5 h-5"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <div class="panel-body">
+              <p class="panel-subtitle">
+                Mirrors the Force layout detail view for each connected concept.
+              </p>
+
+              <div
+                v-for="entry in linkPanelNodes"
+                :key="`${entry.node.id}-${entry.key}`"
+                class="node-detail-card"
+              >
+                <div class="node-card-header">
+                  <span class="node-role" :class="entry.key">
+                    {{ entry.role }}
+                  </span>
+                  <h4 class="node-title">
+                    {{ entry.node.label || entry.node.id }}
+                  </h4>
+                </div>
+
+                <p class="node-description">
+                  {{
+                    entry.node.description || 'No description available yet.'
+                  }}
+                </p>
+
+                <div
+                  class="collapse collapse-arrow bg-base-200 whitespace-normal break-words"
+                >
+                  <input type="checkbox" checked />
+                  <div class="collapse-title font-medium">
+                    General Knowledge
+                  </div>
+                  <small class="text-white/50 text-xs flex justify-center pb-4">
+                    Links may be broken. Building new agents to fix them.
+                  </small>
+                  <div class="collapse-content prose prose-invert max-w-none">
+                    <div
+                      v-if="entry.node.generalKnowledge"
+                      v-html="renderMarkdown(entry.node.generalKnowledge)"
+                      class="markdown-content"
+                      @click="handleMarkdownLinkClick"
+                    ></div>
+                    <p v-else class="text-sm text-gray-400">
+                      No general knowledge captured yet.
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  class="collapse collapse-arrow bg-base-200 whitespace-normal break-words"
+                >
+                  <input type="checkbox" checked />
+                  <div class="collapse-title font-medium">Relationships</div>
+                  <div class="collapse-content prose prose-invert max-w-none">
+                    <template
+                      v-if="
+                        entry.node.relationships &&
+                        Object.keys(entry.node.relationships).length
+                      "
+                    >
+                      <div
+                        v-for="(relations, type) in entry.node.relationships"
+                        :key="`${entry.node.id}-${type}`"
+                        class="relationship-group"
+                      >
+                        <div class="relationship-type">
+                          {{ formatRelationshipLabel(type) }}
+                        </div>
+                        <div class="relationship-list">
+                          <span
+                            v-for="relation in relations"
+                            :key="`${entry.node.id}-${type}-${relation}`"
+                            class="relationship-badge"
+                          >
+                            {{ relation }}
+                          </span>
+                        </div>
+                      </div>
+                    </template>
+                    <p v-else class="text-sm text-gray-400">
+                      No relationships recorded.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
     </div>
     <div v-else class="empty-graph">
       <div
@@ -163,6 +289,7 @@
 <script setup>
 import { ref, watch, onMounted, onBeforeUnmount, computed, nextTick } from 'vue'
 import * as echarts from 'echarts'
+import MarkdownIt from 'markdown-it'
 import { useSubjectsStore } from '@/stores/subjectsStore'
 import { useVideoStore } from '@/stores/videoStore'
 import { db } from '@/db/db'
@@ -187,6 +314,61 @@ const chartInstance = ref(null)
 const graphData = ref(null)
 const curveness = ref(0.5)
 const nodeGap = ref(24)
+const selectedLink = ref(null)
+const showLinkPanel = ref(false)
+
+const md = new MarkdownIt({
+  html: true,
+  linkify: true,
+  breaks: true,
+})
+
+const linkPanelNodes = computed(() => {
+  if (!selectedLink.value) return []
+
+  const panels = []
+  if (selectedLink.value.sourceNode) {
+    panels.push({
+      role: 'Source Concept',
+      key: 'source',
+      node: selectedLink.value.sourceNode,
+    })
+  }
+  if (selectedLink.value.targetNode) {
+    panels.push({
+      role: 'Target Concept',
+      key: 'target',
+      node: selectedLink.value.targetNode,
+    })
+  }
+  return panels
+})
+
+const renderMarkdown = (content) => md.render(content || '')
+
+const formatRelationshipLabel = (label = '') => {
+  if (!label) return 'Connections'
+  const spaced = label.replace(/([A-Z])/g, ' $1')
+  const normalized = spaced.trim()
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1)
+}
+
+const handleMarkdownLinkClick = (event) => {
+  const target = event.target.closest('a')
+  if (target && target.href) {
+    event.preventDefault()
+    if (window && window.electronAPI) {
+      window.electronAPI.openExternal(target.href)
+    } else {
+      window.open(target.href, '_blank', 'noopener,noreferrer')
+    }
+  }
+}
+
+const closeLinkPanel = () => {
+  showLinkPanel.value = false
+  selectedLink.value = null
+}
 
 const hasGraphData = computed(() => !!graphData.value?.nodes?.length)
 
@@ -195,20 +377,34 @@ const updateGraphType = (type) => emit('update:graphType', type)
 const nodeColorScale = ['#FFB703', '#FB8500', '#8ECAE6', '#219EBC', '#A0AEC0']
 
 const initChart = () => {
-  console.log('[Sankey] 🎨 initChart called')
-  console.log('[Sankey] chartInstance exists?', !!chartInstance.value)
-  console.log('[Sankey] chartRef exists?', !!chartRef.value)
-
   if (!chartInstance.value && chartRef.value) {
-    console.log('[Sankey] Creating new ECharts instance...')
     chartInstance.value = echarts.init(chartRef.value, undefined, {
       renderer: 'canvas',
     })
-    console.log('[Sankey] ✅ ECharts instance created:', chartInstance.value)
-  } else if (chartInstance.value) {
-    console.log('[Sankey] Chart instance already exists')
-  } else {
-    console.warn('[Sankey] ⚠️  chartRef.value is null, cannot init chart')
+
+    chartInstance.value.on('click', (params) => {
+      if (params.dataType !== 'edge') return
+
+      const linkData = params.data.tooltipData
+      const sourceNode = graphData.value?.nodes?.find(
+        (node) => node.id === params.data.source
+      )
+      const targetNode = graphData.value?.nodes?.find(
+        (node) => node.id === params.data.target
+      )
+
+      if (!sourceNode || !targetNode) return
+
+      selectedLink.value = {
+        id: `${sourceNode.id}-${targetNode.id}`,
+        relationship: linkData?.relationship || 'Related concepts',
+        value: params.data.value,
+        linkMeta: linkData,
+        sourceNode,
+        targetNode,
+      }
+      showLinkPanel.value = true
+    })
   }
 }
 
@@ -227,21 +423,14 @@ const normalizeGraphPayload = (payload) => {
 }
 
 const syncGraphData = async () => {
-  console.log('[Sankey] 🔄 Syncing graph data...')
-  console.log('[Sankey] Store graph:', subjectsStore.graph)
-  console.log('[Sankey] Selected subject ID:', subjectsStore.selectedSubjectId)
-
+  closeLinkPanel()
   let graph = normalizeGraphPayload(subjectsStore.graph)
-  console.log('[Sankey] Normalized from store:', graph)
 
   if (!graph?.nodes?.length) {
-    console.log('[Sankey] No graph in store, checking localStorage...')
     const cached = localStorage.getItem('graph')
     if (cached) {
       try {
-        const parsed = JSON.parse(cached)
-        console.log('[Sankey] Parsed from localStorage:', parsed)
-        graph = normalizeGraphPayload(parsed)
+        graph = normalizeGraphPayload(JSON.parse(cached))
       } catch (error) {
         console.error('[Sankey] Failed to parse cached graph:', error)
       }
@@ -249,40 +438,26 @@ const syncGraphData = async () => {
   }
 
   if (!graph?.nodes?.length && subjectsStore.selectedSubjectId) {
-    console.log('[Sankey] Still no graph, fetching from DB...')
     try {
       const subject = await db.subjects.get(subjectsStore.selectedSubjectId)
-      console.log('[Sankey] Subject from DB:', subject)
       graph = normalizeGraphPayload(subject?.graph)
-      console.log('[Sankey] Normalized from DB:', graph)
     } catch (error) {
       console.error('[Sankey] Failed to fetch graph from DB:', error)
     }
   }
 
   graphData.value = graph
-  console.log('[Sankey] ✅ Final graphData.value:', graphData.value)
-  console.log('[Sankey] Has nodes?', !!graphData.value?.nodes?.length)
-  console.log('[Sankey] chartRef.value exists?', !!chartRef.value)
-
   await nextTick()
   renderSankey()
 }
 
 const formatGraphForSankey = () => {
-  console.log('[Sankey] 📊 Formatting graph for Sankey...')
-  console.log('[Sankey] Raw graphData:', graphData.value)
-
   if (!graphData.value?.nodes?.length) {
-    console.warn('[Sankey] ⚠️  No nodes in graphData, returning empty')
     return { nodes: [], links: [] }
   }
 
-  console.log('[Sankey] Node count:', graphData.value.nodes.length)
-  console.log('[Sankey] Link count:', graphData.value.links?.length || 0)
-
   const nodeMap = new Map()
-  graphData.value.nodes.forEach((node, index) => {
+  graphData.value.nodes.forEach((node) => {
     nodeMap.set(node.id, node)
   })
 
@@ -296,25 +471,17 @@ const formatGraphForSankey = () => {
     info: node,
   }))
 
-  // Handle links - source/target might be objects (from D3) or strings
   const sankeyLinks = (graphData.value.links || [])
     .map((link) => {
-      // Extract IDs whether source/target are objects or strings
       const sourceId =
         typeof link.source === 'object' ? link.source.id : link.source
       const targetId =
         typeof link.target === 'object' ? link.target.id : link.target
 
-      console.log('[Sankey] Processing link:', { sourceId, targetId, link })
-
       const sourceNode = nodeMap.get(sourceId)
       const targetNode = nodeMap.get(targetId)
 
       if (!sourceNode || !targetNode) {
-        console.warn('[Sankey] ⚠️  Missing node for link:', {
-          sourceId,
-          targetId,
-        })
         return null
       }
 
@@ -330,42 +497,25 @@ const formatGraphForSankey = () => {
         target: targetId,
         value: averageImportance,
         tooltipData: link,
+        sourceLabel: sourceNode.label || sourceId,
+        targetLabel: targetNode.label || targetId,
         lineStyle: {
           opacity: 0.6,
         },
       }
     })
-    .filter(Boolean) // Remove null entries
-
-  console.log('[Sankey] ✅ Formatted nodes:', sankeyNodes.length)
-  console.log('[Sankey] ✅ Formatted links:', sankeyLinks.length)
-  console.log('[Sankey] Sample node:', sankeyNodes[0])
-  console.log('[Sankey] Sample link:', sankeyLinks[0])
+    .filter(Boolean)
 
   return { nodes: sankeyNodes, links: sankeyLinks }
 }
 
 const renderSankey = () => {
-  console.log('[Sankey] 🎬 renderSankey called')
-  console.log('[Sankey] chartRef.value:', chartRef.value)
-
-  if (!chartRef.value) {
-    console.warn('[Sankey] ⚠️  chartRef is null, cannot render')
-    return
-  }
+  if (!chartRef.value) return
 
   initChart()
   const { nodes, links } = formatGraphForSankey()
 
-  console.log(
-    '[Sankey] After format - nodes:',
-    nodes.length,
-    'links:',
-    links.length
-  )
-
   if (!nodes.length) {
-    console.warn('[Sankey] ⚠️  No nodes to render, clearing chart')
     chartInstance.value?.clear()
     return
   }
@@ -451,30 +601,16 @@ const renderSankey = () => {
     ],
   }
 
-  console.log('[Sankey] 🎨 Setting ECharts option...')
-  console.log('[Sankey] Chart instance exists?', !!chartInstance.value)
-  console.log('[Sankey] Option:', option)
-
   try {
     chartInstance.value?.setOption(option, true)
-
-    // Force resize to ensure proper rendering
     setTimeout(() => {
       chartInstance.value?.resize({
         width: chartRef.value?.offsetWidth || 'auto',
         height: chartRef.value?.offsetHeight || 'auto',
       })
     }, 100)
-
-    console.log('[Sankey] ✅ Sankey chart rendered successfully')
-    console.log(
-      '[Sankey] Chart dimensions:',
-      chartRef.value?.offsetWidth,
-      'x',
-      chartRef.value?.offsetHeight
-    )
   } catch (error) {
-    console.error('[Sankey] ❌ Error setting option:', error)
+    console.error('[Sankey] Error rendering chart:', error)
   }
 }
 
@@ -485,20 +621,17 @@ const resetView = () => {
 watch(
   () => subjectsStore.graph,
   (newVal, oldVal) => {
-    console.log('[Sankey] 👀 Store graph changed')
-    console.log('[Sankey] New value:', newVal)
-    console.log('[Sankey] Old value:', oldVal)
-    syncGraphData()
+    // Only sync if there's actual data or meaningful change
+    if (newVal?.nodes?.length || (!newVal && oldVal)) {
+      syncGraphData()
+    }
   },
   { immediate: true, deep: true }
 )
 
 watch(
   () => subjectsStore.selectedSubjectId,
-  (newId, oldId) => {
-    console.log('[Sankey] 👀 Selected subject changed:', oldId, '->', newId)
-    syncGraphData()
-  }
+  () => syncGraphData()
 )
 
 watch([curveness, nodeGap], () => {
@@ -524,11 +657,8 @@ watch(
 )
 
 onMounted(async () => {
-  console.log('[Sankey] 🚀 Component mounted')
-  console.log('[Sankey] chartRef on mount:', chartRef.value)
   window.addEventListener('resize', handleResize)
   await nextTick()
-  console.log('[Sankey] chartRef after nextTick:', chartRef.value)
   await syncGraphData()
 })
 
@@ -549,6 +679,7 @@ const handleResize = () => {
   width: 100%;
   height: 100%;
   min-height: 600px;
+  cursor: pointer;
 }
 
 .mindmap-container {
@@ -563,5 +694,159 @@ const handleResize = () => {
   height: 100%;
   min-height: 100vh;
   position: relative;
+}
+
+/* Link Detail Panel */
+.link-detail-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 440px;
+  height: 100vh;
+  background: rgba(3, 7, 18, 0.55);
+  backdrop-filter: blur(12px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.panel-content {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    135deg,
+    rgba(11, 16, 33, 0.98) 0%,
+    rgba(15, 23, 42, 0.98) 100%
+  );
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.panel-body {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.panel-eyebrow {
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-bottom: 0.25rem;
+}
+
+.panel-subtitle {
+  font-size: 0.85rem;
+  color: #cbd5f5;
+}
+
+.node-detail-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.node-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.node-role {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  align-self: flex-start;
+}
+
+.node-role.source {
+  background: linear-gradient(135deg, #ffb703 0%, #fb8500 100%);
+  color: #1a1a1a;
+}
+
+.node-role.target {
+  background: linear-gradient(135deg, #8ecae6 0%, #219ebc 100%);
+  color: #0f172a;
+}
+
+.node-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.node-description {
+  font-size: 0.95rem;
+  color: #cbd5f5;
+}
+
+.relationship-group {
+  margin-bottom: 1rem;
+}
+
+.relationship-type {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  color: #e2e8f0;
+  margin-bottom: 0.35rem;
+}
+
+.relationship-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.relationship-badge {
+  padding: 0.3rem 0.75rem;
+  background: rgba(226, 232, 240, 0.08);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  color: #e2e8f0;
+  border: 1px solid rgba(226, 232, 240, 0.12);
+}
+
+.markdown-content {
+  max-height: 180px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+/* Transition */
+.slide-fade-enter-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-fade-leave-active {
+  transition: all 0.3s cubic-bezier(1, 0.5, 0.8, 1);
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateX(400px);
+  opacity: 0;
 }
 </style>
