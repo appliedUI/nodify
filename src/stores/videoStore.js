@@ -7,6 +7,8 @@ const graphForceStore = useGraphForceStore()
 export const useVideoStore = defineStore('video', {
   state: () => ({
     youtubeTranscript: null,
+    youtubeTranscriptSegments: null,
+    transcriptMethod: null,
     processingProgress: null,
     isVideoProcessing: false,
     error: null,
@@ -107,24 +109,37 @@ export const useVideoStore = defineStore('video', {
         this.videoId = videoId
 
         console.log('📋 Fetching transcript from main process...')
-        const fullTranscript = await window.electronAPI.fetchYouTubeTranscript(
-          videoId
-        )
+        const result = await window.electronAPI.fetchYouTubeTranscript(videoId)
 
-        if (!fullTranscript || fullTranscript.trim().length === 0) {
+        // Handle both old string format and new structured format for backward compatibility
+        let text, segments, method
+        if (typeof result === 'string') {
+          // Old format (backward compatibility)
+          text = result
+          segments = []
+          method = 'legacy'
+        } else {
+          // New structured format
+          text = result.text
+          segments = result.segments || []
+          method = result.method || 'unknown'
+        }
+
+        if (!text || text.trim().length === 0) {
           throw new Error('Empty transcript received')
         }
 
         console.log(
-          '✅ Transcript fetched successfully, length:',
-          fullTranscript.length
+          `✅ Transcript fetched successfully via ${method}: ${text.length} characters, ${segments.length} segments`
         )
-        this.youtubeTranscript = fullTranscript
+        this.youtubeTranscript = text
+        this.youtubeTranscriptSegments = segments
+        this.transcriptMethod = method
         this.retryCount = 0 // Reset retry count on success
 
         if (subjectId) {
           const subjectsStore = useSubjectsStore()
-          await subjectsStore.updateTranscript(subjectId, fullTranscript)
+          await subjectsStore.updateTranscript(subjectId, text)
 
           // Set up OpenAI progress listener
           window.electronAPI.onOpenaiProgress((event, progress) => {
@@ -134,13 +149,13 @@ export const useVideoStore = defineStore('video', {
           graphForceStore.setGraphLoading(true)
           const graphData = await window.electronAPI.generateGraphWithOpenAI({
             apiKey: localStorage.getItem('openai_key'),
-            transcript: fullTranscript,
+            transcript: text,
             subjectId: subjectId,
           })
           await subjectsStore.setGraph(graphData)
         }
 
-        return fullTranscript
+        return text
       } catch (error) {
         console.error('❌ Error fetching YouTube transcript:', error)
         this.transcriptError = error.message
@@ -175,6 +190,8 @@ export const useVideoStore = defineStore('video', {
     // Clear transcript and error states
     clearTranscriptState() {
       this.youtubeTranscript = null
+      this.youtubeTranscriptSegments = null
+      this.transcriptMethod = null
       this.transcriptError = null
       this.transcriptLoading = false
       this.retryCount = 0

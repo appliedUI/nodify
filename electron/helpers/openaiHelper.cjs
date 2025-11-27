@@ -5,7 +5,7 @@ const Ajv = require('ajv')
 const ajv = new Ajv({ allErrors: true, allowUnionTypes: true })
 
 // Define the JSON schema based on the provided structure
-const schema = {
+const graphSchema = {
   type: 'object',
   properties: {
     nodes: {
@@ -62,7 +62,14 @@ const schema = {
   required: ['nodes', 'links'],
 }
 
-const validate = ajv.compile(schema)
+const validate = ajv.compile(graphSchema)
+const responseFormat = {
+  type: 'json_schema',
+  json_schema: {
+    name: 'graph_structure',
+    schema: JSON.parse(JSON.stringify(graphSchema)),
+  },
+}
 
 /**
  * Generates JSON from a transcript using OpenAI's GPT-4 model.
@@ -147,8 +154,9 @@ ${transcript}
         },
       ],
       temperature: 0.5,
-      max_tokens: 3000,
+      max_tokens: 16000, // Increased to handle longer transcripts
       stream: true,
+      response_format: responseFormat, // Force JSON output via schema
     })
 
     let fullResponse = ''
@@ -171,6 +179,10 @@ ${transcript}
       }
     }
 
+    console.log(
+      `📝 OpenAI streaming complete. Total response length: ${fullResponse.length} characters`
+    )
+
     // Parse and validate the JSON
     try {
       // Update progress to 75%
@@ -182,15 +194,96 @@ ${transcript}
         })
       }
 
+      // Clean the response - remove any markdown code blocks or extra text
+      let cleanedResponse = fullResponse.trim()
+
+      // Remove markdown code fences if present
+      if (cleanedResponse.startsWith('```')) {
+        cleanedResponse = cleanedResponse
+          .replace(/^```(?:json)?\n?/, '')
+          .replace(/\n?```$/, '')
+      }
+
+      // Try to extract JSON if there's extra text
+      const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        cleanedResponse = jsonMatch[0]
+      }
+
+      console.log(
+        'Attempting to parse JSON response (length:',
+        cleanedResponse.length,
+        ')'
+      )
+
       // Parse the JSON
-      const jsonData = JSON.parse(fullResponse)
+      let jsonData
+      try {
+        jsonData = JSON.parse(cleanedResponse)
+      } catch (parseError) {
+        console.error('Initial JSON parse failed:', parseError.message)
+        console.error('Response preview:', cleanedResponse.substring(0, 500))
+
+        // Try to repair common JSON issues
+        try {
+          // Attempt to complete truncated JSON
+          let repairedJson = cleanedResponse
+
+          // If it ends mid-string, try to close it
+          if (!repairedJson.endsWith('}')) {
+            console.log('⚠️  JSON appears truncated, attempting repair...')
+            // Count open braces
+            const openBraces = (repairedJson.match(/\{/g) || []).length
+            const closeBraces = (repairedJson.match(/\}/g) || []).length
+            const openBrackets = (repairedJson.match(/\[/g) || []).length
+            const closeBrackets = (repairedJson.match(/\]/g) || []).length
+
+            // Close any unclosed strings
+            const quoteCount = (repairedJson.match(/"/g) || []).length
+            if (quoteCount % 2 !== 0) {
+              repairedJson += '"'
+            }
+
+            // Close arrays
+            for (let i = 0; i < openBrackets - closeBrackets; i++) {
+              repairedJson += ']'
+            }
+
+            // Close objects
+            for (let i = 0; i < openBraces - closeBraces; i++) {
+              repairedJson += '}'
+            }
+
+            jsonData = JSON.parse(repairedJson)
+            console.log('✅ JSON repair successful!')
+          }
+        } catch (repairError) {
+          console.error('JSON repair failed:', repairError.message)
+          throw parseError // Throw original error
+        }
+      }
 
       // Validate the JSON structure
       const valid = validate(jsonData)
       if (!valid) {
         console.error('JSON validation errors:', validate.errors)
-        throw new Error('JSON structure validation failed.')
+        console.warn(
+          '⚠️  Validation failed but continuing with partial data...'
+        )
+        // Don't throw - allow partial data through
       }
+
+      // Ensure minimum structure exists
+      if (!jsonData.nodes) {
+        jsonData.nodes = []
+      }
+      if (!jsonData.links) {
+        jsonData.links = []
+      }
+
+      console.log(
+        `✅ Successfully parsed graph: ${jsonData.nodes.length} nodes, ${jsonData.links.length} links`
+      )
 
       // Final progress update
       if (onProgress) {

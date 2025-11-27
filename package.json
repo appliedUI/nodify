@@ -61,7 +61,8 @@
     "vue3-youtube": "^0.1.9",
     "xml2js": "^0.6.2",
     "youtube-captions-scraper": "^2.0.3",
-    "youtube-transcript": "^1.2.1"
+    "youtube-transcript": "^1.2.1",
+    "yt-dlp-exec": "^1.0.2"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.15",

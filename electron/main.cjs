@@ -23,6 +23,8 @@ const openaiHelper = require('./helpers/openaiHelper.cjs')
 const { TranscriptionService } = require('./helpers/transcriptionService.cjs')
 const puppeteer = require('puppeteer')
 const fs = require('fs').promises
+const { fetchTranscriptYT } = require('./youtubeTranscriptYtDlp.cjs')
+const { fetchTranscriptTimedtext } = require('./youtubeTranscriptTimedtext.cjs')
 
 // Helper function to resolve paths in both dev and prod
 const resolveAssetPath = (assetPath) => {
@@ -470,127 +472,31 @@ const setupIpcHandlers = () => {
 
       console.log('📋 Attempting to fetch transcript from YouTube...')
 
-      // Method 1: Direct HTTP request to YouTube's timedtext API
+      // Method 1: Try yt-dlp (most reliable)
       try {
-        console.log('🔄 Trying direct YouTube API...')
-        const https = require('https')
-        const { parseStringPromise } = require('xml2js')
-
-        // Fetch video page to get caption track URL
-        const videoPageHtml = await new Promise((resolve, reject) => {
-          https
-            .get(
-              `https://www.youtube.com/watch?v=${videoId}`,
-              { headers: { 'Accept-Language': 'en-US,en;q=0.9' } },
-              (res) => {
-                let data = ''
-                res.on('data', (chunk) => (data += chunk))
-                res.on('end', () => resolve(data))
-              }
-            )
-            .on('error', reject)
-        })
-
-        // Extract caption tracks from the page HTML
-        const captionTracksMatch = videoPageHtml.match(
-          /"captionTracks":\s*(\[.*?\])/
-        )
-        if (!captionTracksMatch) {
-          console.log('⚠️ No caption tracks found in video page')
-          throw new Error('No captions available')
-        }
-
-        const captionTracks = JSON.parse(captionTracksMatch[1])
+        console.log('🔄 Trying yt-dlp method...')
+        const result = await fetchTranscriptYT(videoId)
         console.log(
-          `✅ Found ${captionTracks.length} caption track(s):`,
-          captionTracks.map((t) => t.languageCode || t.name?.simpleText)
+          `✅ yt-dlp success: ${result.text.length} characters, ${result.segments.length} segments`
         )
-
-        // Prefer English, then auto-generated, then first available
-        let captionUrl = null
-        const priorities = ['en', 'a.en', '']
-        for (const lang of priorities) {
-          const track = captionTracks.find(
-            (t) =>
-              t.languageCode === lang ||
-              t.vssId?.includes(lang) ||
-              (lang === '' && t)
-          )
-          if (track?.baseUrl) {
-            captionUrl = track.baseUrl
-            console.log(`✅ Selected caption track: ${track.languageCode}`)
-            break
-          }
-        }
-
-        if (!captionUrl) {
-          captionUrl = captionTracks[0]?.baseUrl
-          console.log('✅ Using first available caption track')
-        }
-
-        if (!captionUrl) {
-          throw new Error('No caption URL found')
-        }
-
-        // Fetch the caption XML
-        const captionXml = await new Promise((resolve, reject) => {
-          https
-            .get(captionUrl, (res) => {
-              let data = ''
-              res.on('data', (chunk) => (data += chunk))
-              res.on('end', () => resolve(data))
-            })
-            .on('error', reject)
-        })
-
-        // Parse XML and extract text
-        const captionData = await parseStringPromise(captionXml)
-        const textSegments =
-          captionData?.transcript?.text?.map((item) => {
-            // Decode HTML entities and clean up
-            return (item._ || item)
-              .replace(/&amp;/g, '&')
-              .replace(/&lt;/g, '<')
-              .replace(/&gt;/g, '>')
-              .replace(/&quot;/g, '"')
-              .replace(/&#39;/g, "'")
-              .replace(/\n/g, ' ')
-              .trim()
-          }) || []
-
-        const fullTranscript = textSegments.filter((t) => t).join(' ')
-
-        if (fullTranscript.length > 0) {
-          console.log(
-            '✅ Successfully fetched transcript via direct API, length:',
-            fullTranscript.length
-          )
-          return fullTranscript
-        } else {
-          console.log('⚠️ Caption XML parsed but no text found')
-        }
-      } catch (directApiError) {
-        console.log('⚠️ Direct API failed:', directApiError.message)
+        return result
+      } catch (ytdlpError) {
+        console.log('⚠️ yt-dlp failed:', ytdlpError.message)
       }
 
-      // Method 2: Try Puppeteer scraping as fallback
+      // Method 2: Try Timedtext API as fallback
       try {
-        console.log('🔄 Trying Puppeteer scraping...')
-        const fullTranscript = await scrapeTranscriptWithPuppeteer(videoId)
-        if (fullTranscript && fullTranscript.trim().length > 0) {
-          console.log(
-            '✅ Successfully fetched transcript via Puppeteer, length:',
-            fullTranscript.length
-          )
-          return fullTranscript
-        }
-      } catch (puppeteerError) {
-        console.log('⚠️ Puppeteer scraping failed:', puppeteerError.message)
+        console.log('🔄 Trying Timedtext fallback...')
+        const result = await fetchTranscriptTimedtext(videoId)
+        console.log(`✅ Timedtext success: ${result.text.length} characters`)
+        return result
+      } catch (timedtextError) {
+        console.log('⚠️ Timedtext failed:', timedtextError.message)
       }
 
       // All methods failed
       throw new Error(
-        'No transcript content found for this video. The video may not have captions/subtitles enabled or the transcript may not be available.'
+        'No transcript available for this video. The video may not have captions/subtitles enabled.'
       )
     } catch (error) {
       console.error('❌ Error fetching YouTube transcript:', {
@@ -601,15 +507,23 @@ const setupIpcHandlers = () => {
 
       // Provide more specific error messages
       let userMessage = 'Failed to fetch YouTube transcript'
-      if (error.message.includes('No transcript')) {
+      if (
+        error.message.includes('No transcript') ||
+        error.message.includes('No English captions') ||
+        error.message.includes('No caption')
+      ) {
         userMessage = 'No transcript available for this video'
-      } else if (error.message.includes('Video unavailable')) {
+      } else if (
+        error.message.includes('Video unavailable') ||
+        error.message.includes('private')
+      ) {
         userMessage = 'Video is not available or private'
       } else if (error.message.includes('Invalid')) {
         userMessage = 'Invalid video URL or ID'
       } else if (
         error.message.includes('network') ||
-        error.message.includes('fetch')
+        error.message.includes('ENOTFOUND') ||
+        error.message.includes('ETIMEDOUT')
       ) {
         userMessage = 'Network error - please check your internet connection'
       }
