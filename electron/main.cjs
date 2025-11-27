@@ -1,6 +1,9 @@
 // ========================
 // IMPORTS & CONFIGURATION
 // ========================
+// IMPORTANT: This must be the very first import from openai package
+require('openai/shims/node')
+
 const {
   app,
   BrowserWindow,
@@ -139,7 +142,7 @@ async function createWindow() {
               default-src 'self';
               script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* https://www.youtube.com https://*.ytimg.com https://www.google.com https://www.gstatic.com https://*.googleapis.com https://*.doubleclick.net;
               style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-              connect-src 'self' http://localhost:* ws://localhost:* https://*.youtube.com https://*.googlevideo.com https://*.googleapis.com https://www.google.com https://*.doubleclick.net https://s.youtube.com https://i.ytimg.com https://yt3.ggpht.com https://play.google.com https://*.g.doubleclick.net https://googleads.g.doubleclick.net https://static.doubleclick.net;
+              connect-src 'self' http://localhost:* ws://localhost:* ws://127.0.0.1:* https://*.youtube.com https://*.googlevideo.com https://*.googleapis.com https://www.google.com https://*.doubleclick.net https://s.youtube.com https://i.ytimg.com https://yt3.ggpht.com https://play.google.com https://*.g.doubleclick.net https://googleads.g.doubleclick.net https://static.doubleclick.net;
               img-src 'self' data: http://localhost:* https://*.ytimg.com https://*.youtube.com https://*.ggpht.com https://www.gstatic.com https://*.doubleclick.net https://via.placeholder.com https://*.gravatar.com;
               font-src 'self' https://fonts.gstatic.com data: https://fonts.googleapis.com;
               object-src 'none';
@@ -434,12 +437,20 @@ const setupIpcHandlers = () => {
         })
 
         console.log('Starting transcription...')
+        console.log('🔑 API Key present:', apiKey ? 'Yes' : 'No')
+        console.log('🔑 API Key length:', apiKey?.length || 0)
+
         const transcript = await transcriptionService.transcribe(audioBuffer)
 
         return transcript
       } catch (error) {
         console.error('❌ Transcription error:', error)
-        throw new Error(`Failed to transcribe audio: ${error.message}`)
+        console.error('Error stack:', error.stack)
+        console.error('Error response:', error.response?.data)
+        console.error('Error status:', error.status)
+        throw new Error(
+          `Failed to transcribe audio: ${error.status} ${error.message}`
+        )
       }
     }
   )
@@ -458,125 +469,111 @@ const setupIpcHandlers = () => {
       }
 
       console.log('📋 Attempting to fetch transcript from YouTube...')
-      console.log('🔧 DEBUG: Using updated language priority order!')
-      console.log('🔧 DEBUG: Video ID being processed:', videoId)
 
-      // Method 1: Try youtube-captions-scraper (more recent)
+      // Method 1: Direct HTTP request to YouTube's timedtext API
       try {
-        console.log('🔄 Trying youtube-captions-scraper...')
-        const { getSubtitles } = require('youtube-captions-scraper')
+        console.log('🔄 Trying direct YouTube API...')
+        const https = require('https')
+        const { parseStringPromise } = require('xml2js')
 
-        // Try different language codes - prioritize basic 'en' over regional variants
-        const langCodes = ['en', 'auto', '', 'en-US', 'en-GB']
-        console.log('🔧 DEBUG: Will try langCodes:', langCodes)
-        for (const lang of langCodes) {
-          try {
-            console.log(
-              `🔧 DEBUG: Trying youtube-captions-scraper with lang: "${lang}"`
+        // Fetch video page to get caption track URL
+        const videoPageHtml = await new Promise((resolve, reject) => {
+          https
+            .get(
+              `https://www.youtube.com/watch?v=${videoId}`,
+              { headers: { 'Accept-Language': 'en-US,en;q=0.9' } },
+              (res) => {
+                let data = ''
+                res.on('data', (chunk) => (data += chunk))
+                res.on('end', () => resolve(data))
+              }
             )
-            const captions = await getSubtitles({
-              videoID: videoId,
-              lang: lang,
+            .on('error', reject)
+        })
+
+        // Extract caption tracks from the page HTML
+        const captionTracksMatch = videoPageHtml.match(
+          /"captionTracks":\s*(\[.*?\])/
+        )
+        if (!captionTracksMatch) {
+          console.log('⚠️ No caption tracks found in video page')
+          throw new Error('No captions available')
+        }
+
+        const captionTracks = JSON.parse(captionTracksMatch[1])
+        console.log(
+          `✅ Found ${captionTracks.length} caption track(s):`,
+          captionTracks.map((t) => t.languageCode || t.name?.simpleText)
+        )
+
+        // Prefer English, then auto-generated, then first available
+        let captionUrl = null
+        const priorities = ['en', 'a.en', '']
+        for (const lang of priorities) {
+          const track = captionTracks.find(
+            (t) =>
+              t.languageCode === lang ||
+              t.vssId?.includes(lang) ||
+              (lang === '' && t)
+          )
+          if (track?.baseUrl) {
+            captionUrl = track.baseUrl
+            console.log(`✅ Selected caption track: ${track.languageCode}`)
+            break
+          }
+        }
+
+        if (!captionUrl) {
+          captionUrl = captionTracks[0]?.baseUrl
+          console.log('✅ Using first available caption track')
+        }
+
+        if (!captionUrl) {
+          throw new Error('No caption URL found')
+        }
+
+        // Fetch the caption XML
+        const captionXml = await new Promise((resolve, reject) => {
+          https
+            .get(captionUrl, (res) => {
+              let data = ''
+              res.on('data', (chunk) => (data += chunk))
+              res.on('end', () => resolve(data))
             })
-            console.log(
-              `🔧 DEBUG: getSubtitles returned for "${lang}":`,
-              captions ? captions.length : 'null'
-            )
+            .on('error', reject)
+        })
 
-            if (captions) {
-              if (captions.length > 0) {
-                const fullTranscript = captions
-                  .map((caption) => caption.text)
-                  .join(' ')
-                console.log(
-                  `✅ Successfully fetched transcript via youtube-captions-scraper (${lang}), length:`,
-                  fullTranscript.length
-                )
-                return fullTranscript
-              } else {
-                console.log(
-                  `⚠️ youtube-captions-scraper found "${lang}" but transcript is empty (0 captions)`
-                )
-                // Continue to next language code instead of returning empty
-              }
-            }
-          } catch (langError) {
-            console.log(
-              `⚠️ youtube-captions-scraper failed for ${lang}:`,
-              langError.message
-            )
-            continue
-          }
+        // Parse XML and extract text
+        const captionData = await parseStringPromise(captionXml)
+        const textSegments =
+          captionData?.transcript?.text?.map((item) => {
+            // Decode HTML entities and clean up
+            return (item._ || item)
+              .replace(/&amp;/g, '&')
+              .replace(/&lt;/g, '<')
+              .replace(/&gt;/g, '>')
+              .replace(/&quot;/g, '"')
+              .replace(/&#39;/g, "'")
+              .replace(/\n/g, ' ')
+              .trim()
+          }) || []
+
+        const fullTranscript = textSegments.filter((t) => t).join(' ')
+
+        if (fullTranscript.length > 0) {
+          console.log(
+            '✅ Successfully fetched transcript via direct API, length:',
+            fullTranscript.length
+          )
+          return fullTranscript
+        } else {
+          console.log('⚠️ Caption XML parsed but no text found')
         }
-      } catch (scraperError) {
-        console.log('⚠️ youtube-captions-scraper failed:', scraperError.message)
+      } catch (directApiError) {
+        console.log('⚠️ Direct API failed:', directApiError.message)
       }
 
-      // Method 2: Try original youtube-transcript package
-      try {
-        console.log('🔄 Trying youtube-transcript...')
-        const { YoutubeTranscript } = require('youtube-transcript')
-
-        // Try different language codes and fallback options - prioritize basic 'en'
-        const langOptions = [
-          { lang: 'en' },
-          {}, // Let it auto-detect
-          { lang: 'en-US' },
-          { lang: 'en-GB' },
-        ]
-        console.log('🔧 DEBUG: Will try langOptions:', langOptions)
-
-        for (const options of langOptions) {
-          try {
-            console.log(
-              `🔧 DEBUG: Trying youtube-transcript with options:`,
-              JSON.stringify(options)
-            )
-            const transcriptArray = await YoutubeTranscript.fetchTranscript(
-              videoId,
-              options
-            )
-            console.log(
-              `🔧 DEBUG: YoutubeTranscript returned for ${JSON.stringify(
-                options
-              )}:`,
-              transcriptArray ? transcriptArray.length : 'null'
-            )
-
-            if (transcriptArray) {
-              if (transcriptArray.length > 0) {
-                const fullTranscript = transcriptArray
-                  .map((item) => item.text)
-                  .join(' ')
-                console.log(
-                  `✅ Successfully fetched transcript via youtube-transcript (${JSON.stringify(
-                    options
-                  )}), length:`,
-                  fullTranscript.length
-                )
-                return fullTranscript
-              } else {
-                console.log(
-                  `⚠️ youtube-transcript found ${JSON.stringify(
-                    options
-                  )} but transcript is empty (0 items)`
-                )
-                // Continue to next language option instead of returning empty
-              }
-            }
-          } catch (langError) {
-            console.log(
-              `⚠️ youtube-transcript failed for ${JSON.stringify(options)}:`,
-              langError.message
-            )
-            continue
-          }
-        }
-      } catch (originalError) {
-        console.log('⚠️ youtube-transcript failed:', originalError.message)
-      }
-
-      // Method 3: Try Puppeteer scraping as last resort
+      // Method 2: Try Puppeteer scraping as fallback
       try {
         console.log('🔄 Trying Puppeteer scraping...')
         const fullTranscript = await scrapeTranscriptWithPuppeteer(videoId)
@@ -593,7 +590,7 @@ const setupIpcHandlers = () => {
 
       // All methods failed
       throw new Error(
-        'No transcript content found for this video. The video may have empty transcript tracks or transcript may not be available.'
+        'No transcript content found for this video. The video may not have captions/subtitles enabled or the transcript may not be available.'
       )
     } catch (error) {
       console.error('❌ Error fetching YouTube transcript:', {

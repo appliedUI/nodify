@@ -60,9 +60,35 @@ class TranscriptionService {
       ffprobePath,
     })
 
+    // Check for proxy environment variables that might interfere
+    console.log('Environment check:', {
+      HTTP_PROXY: process.env.HTTP_PROXY || 'not set',
+      HTTPS_PROXY: process.env.HTTPS_PROXY || 'not set',
+      NO_PROXY: process.env.NO_PROXY || 'not set',
+      OPENAI_BASE_URL: process.env.OPENAI_BASE_URL || 'not set',
+    })
+
+    // Temporarily clear OPENAI_BASE_URL to ensure we use the real OpenAI API
+    const originalBaseUrl = process.env.OPENAI_BASE_URL
+    delete process.env.OPENAI_BASE_URL
+
+    // Initialize OpenAI client with explicit configuration
     this.openai = new OpenAI({
       apiKey: openaiKey,
+      maxRetries: 3,
+      timeout: 60000, // 60 seconds
+      baseURL: 'https://api.openai.com/v1', // Explicitly set the base URL
     })
+
+    // Restore the original environment variable if it existed
+    if (originalBaseUrl) {
+      process.env.OPENAI_BASE_URL = originalBaseUrl
+    }
+
+    console.log('OpenAI client initialized')
+    console.log('  - baseURL:', this.openai.baseURL)
+    console.log('  - API key present:', !!openaiKey)
+    console.log('  - API key length:', openaiKey?.length || 0)
     this.model = whisperModel
     this.MAX_FILE_SIZE = 25 * 1024 * 1024 // 25MB (slightly larger than chunk size)
     this.CHUNK_SIZE = 20 * 1024 * 1024 // 20MB chunks
@@ -151,15 +177,49 @@ class TranscriptionService {
 
   async processSingleFile(filePath) {
     console.log(`📤 Sending 1 file to OpenAI API`)
-    const file = fs.createReadStream(filePath)
-    const transcription = await this.openai.audio.transcriptions.create({
-      file: file,
-      model: this.model,
-      response_format: 'json',
-      language: 'en',
-    })
-    console.log(`✅ Received transcription for 1 file`)
-    return transcription.text
+    console.log(`📁 File path: ${filePath}`)
+    console.log(`📏 File size: ${fs.statSync(filePath).size} bytes`)
+
+    try {
+      console.log('🔑 Using Whisper model:', this.model)
+      console.log('🌐 OpenAI Base URL:', this.openai.baseURL)
+      console.log('🌐 Making API call to OpenAI Whisper...')
+
+      // Create a read stream for the file
+      const fileStream = fs.createReadStream(filePath)
+
+      console.log('📂 File stream created successfully')
+
+      const transcription = await this.openai.audio.transcriptions.create({
+        file: fileStream,
+        model: this.model,
+        response_format: 'json',
+        language: 'en',
+      })
+
+      console.log(`✅ Received transcription for 1 file`)
+      console.log(
+        `📝 Transcription length: ${transcription.text?.length || 0} characters`
+      )
+      return transcription.text
+    } catch (error) {
+      console.error('❌ Error in processSingleFile:', error)
+      console.error('Error details:', {
+        message: error.message,
+        status: error.status,
+        type: error.type,
+        code: error.code,
+        headers: error.headers,
+        url: error.url,
+      })
+
+      // Log full error for debugging
+      if (error.response) {
+        console.error('Error response data:', error.response.data)
+      }
+
+      throw error
+    }
   }
 
   async processChunkedFile(filePath, progressCallback) {
