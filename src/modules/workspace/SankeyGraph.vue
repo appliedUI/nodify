@@ -452,6 +452,13 @@ const syncGraphData = async () => {
   }
 
   graphData.value = graph
+
+  // Keep store graph in sync so other layouts (ForceGraph)
+  // can reuse the same data when the user toggles views
+  if (graph && Object.keys(graph).length) {
+    subjectsStore.graph = graph
+    localStorage.setItem('graph', JSON.stringify(graph))
+  }
   await nextTick()
   renderSankey()
 }
