@@ -382,6 +382,11 @@ const initChart = () => {
       renderer: 'canvas',
     })
 
+    // Enable mouse wheel zoom
+    chartInstance.value.on('mousewheel', (params) => {
+      params.event.preventDefault()
+    })
+
     chartInstance.value.on('click', (params) => {
       if (params.dataType !== 'edge') return
 
@@ -526,6 +531,30 @@ const renderSankey = () => {
 
   const option = {
     backgroundColor: '#050505',
+    toolbox: {
+      show: true,
+      feature: {
+        restore: {
+          show: true,
+          title: 'Reset View',
+        },
+        saveAsImage: {
+          show: true,
+          title: 'Save as Image',
+          pixelRatio: 2,
+        },
+      },
+      right: '5%',
+      top: '3%',
+      iconStyle: {
+        borderColor: '#E2E8F0',
+      },
+      emphasis: {
+        iconStyle: {
+          borderColor: '#FFB703',
+        },
+      },
+    },
     grid: {
       left: '3%',
       right: '3%',
@@ -577,8 +606,9 @@ const renderSankey = () => {
         nodeWidth: 20,
         nodeGap: nodeGap.value,
         layoutIterations: 32,
-        draggable: false,
+        draggable: true,
         orient: 'horizontal',
+        nodeAlign: 'justify',
         lineStyle: {
           color: 'gradient',
           curveness: curveness.value,
@@ -603,6 +633,16 @@ const renderSankey = () => {
 
   try {
     chartInstance.value?.setOption(option, true)
+
+    // Enable roam (zoom and pan) on the chart
+    chartInstance.value?.setOption({
+      series: [
+        {
+          roam: true, // Enable zoom and pan
+        },
+      ],
+    })
+
     setTimeout(() => {
       chartInstance.value?.resize({
         width: chartRef.value?.offsetWidth || 'auto',
