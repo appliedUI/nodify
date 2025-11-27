@@ -136,25 +136,76 @@
                   Connection Details
                 </h3>
               </div>
-              <button
-                @click="closeLinkPanel"
-                class="btn btn-ghost btn-sm btn-circle"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="2"
-                  stroke="currentColor"
-                  class="w-5 h-5"
+              <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1">
+                  <button
+                    @click="navigateToPrevious"
+                    :disabled="!hasPreviousLink"
+                    class="btn btn-ghost btn-sm btn-circle"
+                    :class="{
+                      'opacity-30 cursor-not-allowed': !hasPreviousLink,
+                    }"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke-width="2"
+                      stroke="currentColor"
+                      class="w-5 h-5"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M15.75 19.5L8.25 12l7.5-7.5"
+                      />
+                    </svg>
+                  </button>
+                  <span class="text-xs text-gray-400"
+                    >{{ currentLinkIndex + 1 }} / {{ allLinks.length }}</span
+                  >
+                  <button
+                    @click="navigateToNext"
+                    :disabled="!hasNextLink"
+                    class="btn btn-ghost btn-sm btn-circle"
+                    :class="{ 'opacity-30 cursor-not-allowed': !hasNextLink }"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke-width="2"
+                      stroke="currentColor"
+                      class="w-5 h-5"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M8.25 4.5l7.5 7.5-7.5 7.5"
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <button
+                  @click="closeLinkPanel"
+                  class="btn btn-ghost btn-sm btn-circle"
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="2"
+                    stroke="currentColor"
+                    class="w-5 h-5"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             <div class="panel-body">
@@ -168,7 +219,7 @@
                 class="node-detail-card"
               >
                 <div class="node-card-header">
-                  <span class="node-role" :class="entry.key">
+                  <span class="node-role mb-3" :class="entry.key">
                     {{ entry.role }}
                   </span>
                   <h4 class="node-title">
@@ -316,6 +367,8 @@ const curveness = ref(0.5)
 const nodeGap = ref(24)
 const selectedLink = ref(null)
 const showLinkPanel = ref(false)
+const allLinks = ref([])
+const currentLinkIndex = ref(0)
 
 const md = new MarkdownIt({
   html: true,
@@ -344,6 +397,11 @@ const linkPanelNodes = computed(() => {
   return panels
 })
 
+const hasPreviousLink = computed(() => currentLinkIndex.value > 0)
+const hasNextLink = computed(
+  () => currentLinkIndex.value < allLinks.value.length - 1
+)
+
 const renderMarkdown = (content) => md.render(content || '')
 
 const formatRelationshipLabel = (label = '') => {
@@ -368,6 +426,44 @@ const handleMarkdownLinkClick = (event) => {
 const closeLinkPanel = () => {
   showLinkPanel.value = false
   selectedLink.value = null
+  currentLinkIndex.value = 0
+}
+
+const navigateToNext = () => {
+  if (hasNextLink.value) {
+    currentLinkIndex.value++
+    loadLinkAtIndex(currentLinkIndex.value)
+  }
+}
+
+const navigateToPrevious = () => {
+  if (hasPreviousLink.value) {
+    currentLinkIndex.value--
+    loadLinkAtIndex(currentLinkIndex.value)
+  }
+}
+
+const loadLinkAtIndex = (index) => {
+  const linkData = allLinks.value[index]
+  if (!linkData) return
+
+  const sourceNode = graphData.value?.nodes?.find(
+    (node) => node.id === linkData.source
+  )
+  const targetNode = graphData.value?.nodes?.find(
+    (node) => node.id === linkData.target
+  )
+
+  if (!sourceNode || !targetNode) return
+
+  selectedLink.value = {
+    id: `${sourceNode.id}-${targetNode.id}`,
+    relationship: linkData.tooltipData?.relationship || 'Related concepts',
+    value: linkData.value,
+    linkMeta: linkData.tooltipData,
+    sourceNode,
+    targetNode,
+  }
 }
 
 const hasGraphData = computed(() => !!graphData.value?.nodes?.length)
@@ -399,6 +495,27 @@ const initChart = () => {
       )
 
       if (!sourceNode || !targetNode) return
+
+      // Populate all links for navigation
+      allLinks.value = (graphData.value.links || []).map((link) => {
+        const src =
+          typeof link.source === 'object' ? link.source.id : link.source
+        const tgt =
+          typeof link.target === 'object' ? link.target.id : link.target
+        return {
+          source: src,
+          target: tgt,
+          value: link.value || 1,
+          tooltipData: link,
+        }
+      })
+
+      // Find the index of the clicked link
+      currentLinkIndex.value = allLinks.value.findIndex(
+        (link) =>
+          link.source === params.data.source &&
+          link.target === params.data.target
+      )
 
       selectedLink.value = {
         id: `${sourceNode.id}-${targetNode.id}`,
