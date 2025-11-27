@@ -158,6 +158,21 @@
       ></div>
     </div>
   </TranscriptModal>
+
+  <!-- Audio processing progress overlay (reuses global SimulationProgress UI) -->
+  <SimulationProgress
+    :show="!!audioStore.processingProgress || isProcessing"
+    :progress="
+      audioStore.processingProgress?.percent ??
+      (audioStore.processingProgress?.progress ?? 0) * 100
+    "
+    progress-type="audio"
+    :custom-message="
+      audioStore.processingProgress?.message ||
+      (isProcessing ? 'Processing audio transcript…' : '')
+    "
+    :is-complete="!!audioStore.processingProgress?.isComplete"
+  />
 </template>
 
 <script setup>
@@ -180,6 +195,7 @@ import MarkdownIt from 'markdown-it'
 import '@/assets/css/markdown-modal.css'
 import DraggableVideoOverlay from '../video/DraggableVideoOverlay.vue'
 import { usePDFStore } from '@/stores/pdfStore'
+import SimulationProgress from '@/modules/workspace/components/SimulationProgress.vue'
 
 const audioStore = useAudioStore()
 const subjectsStore = useSubjectsStore()
