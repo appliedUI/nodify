@@ -117,8 +117,73 @@
         </button>
       </div>
 
-      <div class="mindmap-container">
-        <div ref="chartRef" class="sankey-chart"></div>
+      <div class="zoom-controls">
+        <button
+          class="btn btn-circle btn-sm bg-base-200/70 backdrop-blur tooltip tooltip-left"
+          @click="zoomIn"
+          :disabled="zoomLevel >= maxZoom"
+          data-tip="Zoom In"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-5 h-5"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 4.5v15m7.5-7.5h-15"
+            />
+          </svg>
+        </button>
+        <div
+          class="zoom-level text-xs text-gray-400 bg-base-200/70 backdrop-blur px-2 py-1 rounded"
+        >
+          {{ zoomPercentage }}%
+        </div>
+        <button
+          class="btn btn-circle btn-sm bg-base-200/70 backdrop-blur tooltip tooltip-left"
+          @click="zoomOut"
+          :disabled="zoomLevel <= minZoom"
+          data-tip="Zoom Out"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-5 h-5"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M19.5 12h-15"
+            />
+          </svg>
+        </button>
+      </div>
+
+      <div
+        class="mindmap-container"
+        @wheel.prevent="handleWheel"
+        @mousedown="handleMouseDown"
+        @mousemove="handleMouseMove"
+        @mouseup="handleMouseUp"
+        @mouseleave="handleMouseUp"
+      >
+        <div
+          ref="chartRef"
+          class="sankey-chart"
+          :style="{
+            transform: chartTransform,
+            transformOrigin: 'center center',
+          }"
+          :class="{ 'is-panning': isPanning, 'can-pan': zoomLevel > 1 }"
+        ></div>
       </div>
 
       <!-- Link Detail Overlay Panel -->
@@ -366,6 +431,15 @@ const graphData = ref(null)
 const curveness = ref(0.5)
 const nodeGap = ref(24)
 const selectedLink = ref(null)
+
+// Zoom state
+const zoomLevel = ref(1)
+const minZoom = 0.3
+const maxZoom = 3
+const zoomStep = 0.2
+const panOffset = ref({ x: 0, y: 0 })
+const isPanning = ref(false)
+const panStart = ref({ x: 0, y: 0 })
 const showLinkPanel = ref(false)
 const allLinks = ref([])
 const currentLinkIndex = ref(0)
@@ -758,15 +832,6 @@ const renderSankey = () => {
   try {
     chartInstance.value?.setOption(option, true)
 
-    // Enable roam (zoom and pan) on the chart
-    chartInstance.value?.setOption({
-      series: [
-        {
-          roam: true, // Enable zoom and pan
-        },
-      ],
-    })
-
     setTimeout(() => {
       chartInstance.value?.resize({
         width: chartRef.value?.offsetWidth || 'auto',
@@ -779,8 +844,61 @@ const renderSankey = () => {
 }
 
 const resetView = () => {
+  zoomLevel.value = 1
+  panOffset.value = { x: 0, y: 0 }
   renderSankey()
 }
+
+const zoomIn = () => {
+  zoomLevel.value = Math.min(maxZoom, zoomLevel.value + zoomStep)
+}
+
+const zoomOut = () => {
+  zoomLevel.value = Math.max(minZoom, zoomLevel.value - zoomStep)
+  // Reset pan if zooming out to fit
+  if (zoomLevel.value <= 1) {
+    panOffset.value = { x: 0, y: 0 }
+  }
+}
+
+const handleWheel = (event) => {
+  event.preventDefault()
+  const delta = event.deltaY > 0 ? -zoomStep : zoomStep
+  const newZoom = Math.max(minZoom, Math.min(maxZoom, zoomLevel.value + delta))
+  zoomLevel.value = newZoom
+  if (newZoom <= 1) {
+    panOffset.value = { x: 0, y: 0 }
+  }
+}
+
+const handleMouseDown = (event) => {
+  if (zoomLevel.value <= 1) return
+  isPanning.value = true
+  panStart.value = {
+    x: event.clientX - panOffset.value.x,
+    y: event.clientY - panOffset.value.y,
+  }
+}
+
+const handleMouseMove = (event) => {
+  if (!isPanning.value) return
+  panOffset.value = {
+    x: event.clientX - panStart.value.x,
+    y: event.clientY - panStart.value.y,
+  }
+}
+
+const handleMouseUp = () => {
+  isPanning.value = false
+}
+
+const chartTransform = computed(() => {
+  return `scale(${zoomLevel.value}) translate(${
+    panOffset.value.x / zoomLevel.value
+  }px, ${panOffset.value.y / zoomLevel.value}px)`
+})
+
+const zoomPercentage = computed(() => Math.round(zoomLevel.value * 100))
 
 watch(
   () => subjectsStore.graph,
@@ -851,6 +969,35 @@ const handleResize = () => {
   inset: 0;
   overflow: hidden;
   min-height: 600px;
+}
+
+.sankey-chart.can-pan {
+  cursor: grab;
+}
+
+.sankey-chart.is-panning {
+  cursor: grabbing;
+}
+
+.sankey-chart {
+  transition: transform 0.1s ease-out;
+}
+
+.zoom-controls {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.zoom-level {
+  min-width: 48px;
+  text-align: center;
 }
 
 .graph-wrapper {
