@@ -138,7 +138,7 @@
     </div>
   </transition>
   <DraggableVideoOverlay
-    v-if="subjectsStore.currentSubject?.youtubeUrl"
+    v-if="hasVideo && youtubeVideoId"
     :video-id="youtubeVideoId"
     :show="showVideo"
     :transcript="videoStore.youtubeTranscript"
@@ -215,7 +215,8 @@ const isRegenerating = ref(false)
 
 const showVideo = ref(false)
 const youtubeVideoId = computed(() => {
-  const url = subjectsStore.currentSubject?.youtubeUrl
+  // Check both sources for the video URL
+  const url = subjectsStore.currentSubject?.youtubeUrl || videoStore.videoUrl
   if (!url) return null
 
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/
