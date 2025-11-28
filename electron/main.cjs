@@ -159,7 +159,7 @@ async function createWindow() {
             `
             : `
               default-src 'self';
-              script-src 'self' 'unsafe-inline' https://www.youtube.com https://*.ytimg.com https://www.google.com https://www.gstatic.com https://*.googleapis.com https://*.doubleclick.net;
+              script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://*.ytimg.com https://www.google.com https://www.gstatic.com https://*.googleapis.com https://*.doubleclick.net;
               style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
               connect-src 'self' https://*.youtube.com https://*.googlevideo.com https://*.googleapis.com https://www.google.com https://*.doubleclick.net https://s.youtube.com https://i.ytimg.com https://yt3.ggpht.com https://play.google.com https://*.g.doubleclick.net https://googleads.g.doubleclick.net https://static.doubleclick.net;
               img-src 'self' data: https://*.ytimg.com https://*.youtube.com https://*.ggpht.com https://www.gstatic.com https://*.doubleclick.net https://via.placeholder.com https://*.gravatar.com;

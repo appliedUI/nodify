@@ -4,6 +4,10 @@
  */
 
 const https = require('https')
+const path = require('path')
+const fs = require('fs')
+const { app } = require('electron')
+const { execFile } = require('child_process')
 
 /**
  * Fetch YouTube transcript using yt-dlp
@@ -12,27 +16,103 @@ const https = require('https')
  */
 async function fetchTranscriptYT(videoId) {
   console.log(`[yt-dlp] Fetching transcript for video: ${videoId}`)
+  console.log(`[yt-dlp] App is packaged: ${app.isPackaged}`)
+  console.log(`[yt-dlp] App path: ${app.getAppPath()}`)
 
   try {
-    // Dynamically require yt-dlp-exec
-    let ytdlp
-    try {
-      ytdlp = require('yt-dlp-exec')
-    } catch (e) {
-      throw new Error(
-        'yt-dlp-exec not installed. This package is required for transcript fallback.'
+    // Determine which binary to use
+    const binaryName = process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp'
+    let ytDlpBinaryPath = null
+    
+    if (app.isPackaged) {
+      // In production, use the unpacked binary directly
+      const binaryPath = path.join(
+        app.getAppPath() + '.unpacked',
+        'node_modules',
+        'yt-dlp-exec',
+        'bin',
+        binaryName
       )
+      console.log(`[yt-dlp] Checking binary path for production: ${binaryPath}`)
+      
+      if (fs.existsSync(binaryPath)) {
+        console.log('[yt-dlp] Binary found at expected path')
+        ytDlpBinaryPath = binaryPath
+      } else {
+        console.error('[yt-dlp] Binary NOT found at:', binaryPath)
+        
+        // Try alternative path (resources path)
+        const altPath = path.join(
+          process.resourcesPath,
+          'app.asar.unpacked',
+          'node_modules',
+          'yt-dlp-exec',
+          'bin',
+          binaryName
+        )
+        console.log('[yt-dlp] Trying alternative path:', altPath)
+        if (fs.existsSync(altPath)) {
+          console.log('[yt-dlp] Binary found at alternative path')
+          ytDlpBinaryPath = altPath
+        } else {
+          throw new Error(`yt-dlp binary not found at ${binaryPath} or ${altPath}`)
+        }
+      }
     }
 
     // Fetch video info with captions
-    const info = await ytdlp(`https://youtu.be/${videoId}`, {
-      writeAutoSub: true,
-      subFormat: 'json3',
-      skipDownload: true,
-      dumpSingleJson: true,
-      noWarnings: true,
-      quiet: true,
-    })
+    const videoUrl = `https://youtu.be/${videoId}`
+    console.log(`[yt-dlp] Calling yt-dlp for video: ${videoUrl}`)
+    
+    let info
+    if (ytDlpBinaryPath) {
+      // In production: use execFile directly to bypass yt-dlp-exec's path resolution
+      console.log(`[yt-dlp] Using direct execFile with binary: ${ytDlpBinaryPath}`)
+      const args = [
+        videoUrl,
+        '--write-auto-sub',
+        '--sub-format', 'json3',
+        '--skip-download',
+        '--dump-single-json',
+        '--no-warnings',
+        '--quiet'
+      ]
+      
+      info = await new Promise((resolve, reject) => {
+        execFile(ytDlpBinaryPath, args, { maxBuffer: 50 * 1024 * 1024 }, (error, stdout, stderr) => {
+          if (error) {
+            console.error('[yt-dlp] execFile error:', error.message)
+            if (stderr) console.error('[yt-dlp] stderr:', stderr)
+            reject(error)
+            return
+          }
+          try {
+            resolve(JSON.parse(stdout))
+          } catch (parseError) {
+            reject(new Error(`Failed to parse yt-dlp output: ${parseError.message}`))
+          }
+        })
+      })
+    } else {
+      // In development: use yt-dlp-exec which handles its own binary
+      let ytdlp
+      try {
+        ytdlp = require('yt-dlp-exec')
+        console.log('[yt-dlp] Using yt-dlp-exec module for development')
+      } catch (e) {
+        console.error('[yt-dlp] Failed to load yt-dlp-exec:', e)
+        throw new Error('yt-dlp-exec not installed')
+      }
+      
+      info = await ytdlp(videoUrl, {
+        writeAutoSub: true,
+        subFormat: 'json3',
+        skipDownload: true,
+        dumpSingleJson: true,
+        noWarnings: true,
+        quiet: true,
+      })
+    }
 
     console.log('[yt-dlp] Video info fetched successfully')
 
@@ -100,6 +180,13 @@ async function fetchTranscriptYT(videoId) {
     }
   } catch (error) {
     console.error('[yt-dlp] Error:', error.message)
+    console.error('[yt-dlp] Error stack:', error.stack)
+    if (error.stderr) {
+      console.error('[yt-dlp] stderr:', error.stderr)
+    }
+    if (error.stdout) {
+      console.error('[yt-dlp] stdout:', error.stdout)
+    }
     throw error
   }
 }

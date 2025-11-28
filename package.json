@@ -172,7 +172,9 @@
     "asarUnpack": [
       "resources/ffmpeg/**/*",
       "resources/ffprobe/**/*",
-      "assets/encrypt/**/*"
+      "assets/encrypt/**/*",
+      "node_modules/yt-dlp-exec/**/*",
+      "node_modules/yt-dlp-wrap/**/*"
     ]
   }
 }
