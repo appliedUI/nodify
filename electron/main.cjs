@@ -23,6 +23,8 @@ const openaiHelper = require('./helpers/openaiHelper.cjs')
 const { TranscriptionService } = require('./helpers/transcriptionService.cjs')
 const puppeteer = require('puppeteer')
 const fs = require('fs').promises
+const fsSync = require('fs')
+const http = require('http')
 const { fetchTranscriptYT } = require('./youtubeTranscriptYtDlp.cjs')
 const { fetchTranscriptTimedtext } = require('./youtubeTranscriptTimedtext.cjs')
 
@@ -112,13 +114,92 @@ const setupServices = () => {
 // ========================
 const isDev = process.env.NODE_ENV === 'development'
 
-async function createWindow() {
-  // In production, set up custom file protocol
-  if (!isDev) {
-    protocol.registerFileProtocol('file', (request, callback) => {
-      const filePath = decodeURI(request.url.replace('file://', ''))
-      callback(filePath)
+// Local server for production (needed for YouTube iframes to work)
+let localServer = null
+let localServerPort = null
+
+// MIME types for serving static files
+const mimeTypes = {
+  '.html': 'text/html',
+  '.js': 'application/javascript',
+  '.css': 'text/css',
+  '.json': 'application/json',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf',
+  '.eot': 'application/vnd.ms-fontobject',
+}
+
+// Start local HTTP server for production
+function startLocalServer() {
+  return new Promise((resolve, reject) => {
+    const distPath = path.join(app.getAppPath(), 'dist')
+    
+    localServer = http.createServer((req, res) => {
+      let filePath = path.join(distPath, req.url === '/' ? 'index.html' : req.url)
+      
+      // Handle query strings
+      const queryIndex = filePath.indexOf('?')
+      if (queryIndex !== -1) {
+        filePath = filePath.substring(0, queryIndex)
+      }
+      
+      const ext = path.extname(filePath).toLowerCase()
+      const contentType = mimeTypes[ext] || 'application/octet-stream'
+      
+      fsSync.readFile(filePath, (err, content) => {
+        if (err) {
+          if (err.code === 'ENOENT') {
+            // For SPA, serve index.html for non-existent paths
+            fsSync.readFile(path.join(distPath, 'index.html'), (err2, indexContent) => {
+              if (err2) {
+                res.writeHead(500)
+                res.end('Error loading index.html')
+              } else {
+                res.writeHead(200, { 'Content-Type': 'text/html' })
+                res.end(indexContent)
+              }
+            })
+          } else {
+            res.writeHead(500)
+            res.end(`Server Error: ${err.code}`)
+          }
+        } else {
+          res.writeHead(200, { 'Content-Type': contentType })
+          res.end(content)
+        }
+      })
     })
+    
+    // Find available port starting from 54321
+    const tryPort = (port) => {
+      localServer.listen(port, '127.0.0.1', () => {
+        localServerPort = port
+        console.log(`[Local Server] Production server running at http://127.0.0.1:${port}`)
+        resolve(port)
+      }).on('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+          tryPort(port + 1)
+        } else {
+          reject(err)
+        }
+      })
+    }
+    
+    tryPort(54321)
+  })
+}
+
+async function createWindow() {
+  // Start local server for production
+  if (!isDev) {
+    await startLocalServer()
   }
 
   const win = new BrowserWindow({
@@ -130,7 +211,23 @@ async function createWindow() {
       webSecurity: true,
       contextIsolation: true,
       nodeIntegration: false,
+      webviewTag: true,
     },
+  })
+
+  // Set permission handler for YouTube iframe embedding
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    const allowedPermissions = ['media', 'display-capture', 'mediaKeySystem', 'clipboard-read', 'clipboard-write', 'fullscreen']
+    if (allowedPermissions.includes(permission)) {
+      callback(true)
+    } else {
+      callback(false)
+    }
+  })
+
+  // Allow YouTube iframes to load properly
+  session.defaultSession.setPermissionCheckHandler((webContents, permission) => {
+    return true
   })
 
   // Set proper Content Security Policy
@@ -183,8 +280,8 @@ async function createWindow() {
   if (isDev) {
     await win.loadURL('http://localhost:5173')
   } else {
-    const indexPath = path.join(app.getAppPath(), 'dist', 'index.html')
-    await win.loadFile(indexPath)
+    // Use local HTTP server so YouTube iframes work (they reject file:// and custom protocols)
+    await win.loadURL(`http://127.0.0.1:${localServerPort}`)
   }
 }
 
@@ -332,7 +429,9 @@ const setupIpcHandlers = () => {
 
         // Create a progress handler that sends updates to renderer
         const progressHandler = (progress) => {
-          event.sender.send('openai-progress', progress)
+          if (!event.sender.isDestroyed()) {
+            event.sender.send('openai-progress', progress)
+          }
         }
 
         const jsonData = await openaiHelper.generateJsonFromTranscript(
@@ -342,10 +441,12 @@ const setupIpcHandlers = () => {
         )
 
         // Update with new graph (no need to clear first since we're overwriting)
-        event.sender.send('db-operation', {
-          type: 'updateSubjectGraph',
-          data: { subjectId: jsonData.subjectId, graph: jsonData.graph },
-        })
+        if (!event.sender.isDestroyed()) {
+          event.sender.send('db-operation', {
+            type: 'updateSubjectGraph',
+            data: { subjectId: jsonData.subjectId, graph: jsonData.graph },
+          })
+        }
 
         return jsonData
       } catch (error) {
@@ -1143,6 +1244,14 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
+  }
+})
+
+// Cleanup local server on quit
+app.on('will-quit', () => {
+  if (localServer) {
+    localServer.close()
+    console.log('[Local Server] Server closed')
   }
 })
 
