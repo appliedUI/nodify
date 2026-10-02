@@ -17,7 +17,8 @@ Nodify is an AI-powered note-taking and knowledge graph application that helps u
 
 ### Prerequisites
 
-- Node.js 16+
+- Node.js 22.12.0 or newer
+- macOS 12 (Monterey) or newer for the macOS app
 - npm or yarn
 - FFmpeg (automatically installed during setup)
 - OpenAI API key (developer account needed)
@@ -25,6 +26,12 @@ Nodify is an AI-powered note-taking and knowledge graph application that helps u
 ## Development
 
 ### macOS
+
+The macOS app supports Intel and Apple Silicon Macs running macOS 12 or newer.
+System audio capture on macOS 12 requires a virtual audio input device; see
+[Electron's audio capture limitations](https://www.electronjs.org/docs/latest/api/desktop-capturer#macos-versions-1276-or-lower).
+On macOS 14.2 or newer, the packaged app includes an audio-capture permission
+description for recording and transcribing meetings. Allow audio capture when prompted.
 
 ```bash
 # Install dependencies

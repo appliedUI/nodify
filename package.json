@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "main": "./electron/main.cjs",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -72,7 +75,7 @@
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
     "daisyui": "^3.7.7",
-    "electron": "^26.6.10",
+    "electron": "^43.7.7",
     "electron-builder": "^24.6.4",
     "postcss": "^8.4.30",
     "prettier": "^2.8.0",
@@ -92,6 +95,10 @@
     "productName": "Nodify",
     "mac": {
       "icon": "build/icons/icon.png",
+      "minimumSystemVersion": "12.0",
+      "extendInfo": {
+        "NSAudioCaptureUsageDescription": "Nodify captures system audio to record and transcribe meetings."
+      },
       "identity": null,
       "hardenedRuntime": false,
       "entitlements": null,
